@@ -1,31 +1,21 @@
 package dev.einfantesv.fitnesstracker
 
-import androidx.activity.compose.setContent
-
-import dev.einfantesv.fitnesstracker.Navigation.NavigationWrapper
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
+import androidx.activity.compose.setContent
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
+import dev.einfantesv.fitnesstracker.Navigation.NavigationWrapper
+import dev.einfantesv.fitnesstracker.Screens.SplashScreen
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var stepCounterViewModel: StepCounterViewModel
-
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            stepCounterViewModel.startListening()
-        } else {
-            Toast.makeText(this, "Permiso denegado", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,27 +25,39 @@ class MainActivity : ComponentActivity() {
             ViewModelProvider.AndroidViewModelFactory.getInstance(application)
         )[StepCounterViewModel::class.java]
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            when {
-                ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED -> {
-                    stepCounterViewModel.startListening()
+        setContent {
+            var showSplash by remember { mutableStateOf(true) }
+            var splashVisible by remember { mutableStateOf(true) }
+
+            LaunchedEffect(Unit) {
+                delay(3000)
+                splashVisible = false
+                delay(500)
+                showSplash = false
+            }
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                AnimatedVisibility(
+                    visible = splashVisible,
+                    exit = slideOutVertically(
+                        targetOffsetY = { -it },
+                        animationSpec = tween(durationMillis = 500)
+                    ),
+                    enter = fadeIn()
+                ) {
+                    SplashScreen()
                 }
-                else -> {
-                    requestPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+
+                if (!showSplash) {
+                    // Pasa el ViewModel para que HomeScreen pueda usarlo
+                    NavigationWrapper(stepCounterViewModel)
                 }
             }
-        } else {
-            stepCounterViewModel.startListening()
-        }
-
-        setContent {
-            NavigationWrapper(stepCounterViewModel)
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        stepCounterViewModel.stopListening()
+        stepCounterViewModel.stopListening() // Puedes decidir si parar aquí o dentro de HomeScreen
     }
 }
-

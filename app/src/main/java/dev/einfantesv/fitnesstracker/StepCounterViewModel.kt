@@ -16,19 +16,28 @@ class StepCounterViewModel(application: Application) : AndroidViewModel(applicat
     private val stepDetectorSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
 
     val stepCount: MutableState<Int> = mutableStateOf(0)
+    private var isListening = false
 
     fun startListening() {
-        stepDetectorSensor?.let {
-            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
+        if (!isListening) {
+            stepDetectorSensor?.let {
+                sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
+                isListening = true
+            }
         }
     }
 
     fun stopListening() {
-        sensorManager.unregisterListener(this)
+        if (isListening) {
+            sensorManager.unregisterListener(this)
+            isListening = false
+        }
     }
 
     override fun onSensorChanged(event: SensorEvent) {
         if (event.sensor.type == Sensor.TYPE_STEP_DETECTOR) {
+            // Actualizar estado en hilo principal para evitar condiciones de carrera
+            // Usando postValue no aplica aquí, mutableState es seguro para Compose
             stepCount.value += event.values[0].toInt()
         }
     }

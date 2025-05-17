@@ -1,5 +1,6 @@
 package dev.einfantesv.fitnesstracker.Navigation
 
+import HomeScreen
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -8,8 +9,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import dev.einfantesv.fitnesstracker.HomeScreen
-import dev.einfantesv.fitnesstracker.ProfileScreen
+import dev.einfantesv.fitnesstracker.Screens.ProfileScreen
 import dev.einfantesv.fitnesstracker.StepCounterViewModel
 
 @Composable
@@ -17,7 +17,6 @@ fun HomeNavigation(mainNavController: NavHostController, stepCounterViewModel: S
     val bottomNavController = rememberNavController()
     val items = listOf(
         BottomNavItem.Home,
-        BottomNavItem.Promotions,
         BottomNavItem.Profile,
     )
 
