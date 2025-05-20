@@ -50,7 +50,6 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.animation.core.lint)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -61,5 +60,4 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling:1.5.3") //Imagenes
     implementation("androidx.navigation:navigation-compose:2.7.7") //Navegacion
     implementation("androidx.compose.material:material-icons-extended:1.5.0") //Iconos
-    implementation("io.coil-kt:coil-compose:2.3.0") //Links de internet
 }

@@ -8,21 +8,16 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import dev.einfantesv.fitnesstracker.screens.ProfileScreen
+import dev.einfantesv.fitnesstracker.Screens.ProfileScreen
 import dev.einfantesv.fitnesstracker.StepCounterViewModel
-import dev.einfantesv.fitnesstracker.UserSessionViewModel
-import dev.einfantesv.fitnesstracker.screens.DataUserScreen
 import dev.einfantesv.fitnesstracker.screens.HomeScreen
-import dev.einfantesv.fitnesstracker.screens.PrizesScreen
 
 @Composable
-fun HomeNavigation(mainNavController: NavHostController, stepCounterViewModel: StepCounterViewModel, userSessionViewModel: UserSessionViewModel) {
+fun HomeNavigation(mainNavController: NavHostController, stepCounterViewModel: StepCounterViewModel) {
     val bottomNavController = rememberNavController()
     val items = listOf(
         BottomNavItem.Home,
-        BottomNavItem.Data,
-        BottomNavItem.Prizes,
-        BottomNavItem.Profile
+        BottomNavItem.Profile,
     )
 
     Scaffold(
@@ -34,10 +29,8 @@ fun HomeNavigation(mainNavController: NavHostController, stepCounterViewModel: S
             modifier = Modifier.padding(padding)
         ) {
             composable(BottomNavItem.Home.route) {
-                HomeScreen(mainNavController, stepCounterViewModel, userSessionViewModel)
+                HomeScreen(mainNavController, stepCounterViewModel)
             }
-            composable(BottomNavItem.Data.route) { DataUserScreen(mainNavController) }
-            composable(BottomNavItem.Prizes.route) { PrizesScreen(mainNavController) }
             composable(BottomNavItem.Profile.route) { ProfileScreen(mainNavController) }
             // Agregar más pantallas
         }

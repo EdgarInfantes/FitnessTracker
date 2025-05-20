@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -24,7 +25,7 @@ fun BottomBar(navController: NavController, items: List<BottomNavItem>) {
     val currentRoute = navBackStackEntry?.destination?.route
 
     NavigationBar(
-        containerColor = Color(0xFF00C853) // fondo verde
+        containerColor = Color(0xFFFFFFFF)
     ) {
         items.forEach { screen ->
             val selected = currentRoute == screen.route
@@ -33,22 +34,23 @@ fun BottomBar(navController: NavController, items: List<BottomNavItem>) {
                 icon = {
                     Box(
                         modifier = Modifier
-                            .size(32.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
-                            .background(if (selected) Color.White else Color.Transparent),
+                            .background(if (selected) Color(0xFF7A63F8) else Color.Transparent),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = screen.icon,
                             contentDescription = screen.title,
-                            tint = if (selected) Color(0xFF00B8D4) else Color.White //Falta corregir color de iconos
+                            tint = if (selected) Color(0xFFFFFFFF) else Color(0xFF7A63F8)
                         )
                     }
                 },
                 label = {
                     Text(
                         text = screen.title,
-                        color = if (selected) Color.Black else Color.White //Falta corregir color de letras
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
                     )
                 },
                 selected = selected,
