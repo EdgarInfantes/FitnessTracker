@@ -16,6 +16,7 @@ import kotlinx.coroutines.delay
 class MainActivity : ComponentActivity() {
 
     private lateinit var stepCounterViewModel: StepCounterViewModel
+    private lateinit var userSessionViewModel: UserSessionViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,6 +25,8 @@ class MainActivity : ComponentActivity() {
             this,
             ViewModelProvider.AndroidViewModelFactory.getInstance(application)
         )[StepCounterViewModel::class.java]
+
+        userSessionViewModel = ViewModelProvider(this)[UserSessionViewModel::class.java]
 
         setContent {
             var showSplash by remember { mutableStateOf(true) }
@@ -50,7 +53,7 @@ class MainActivity : ComponentActivity() {
 
                 if (!showSplash) {
                     // Pasa el ViewModel para que HomeScreen pueda usarlo
-                    NavigationWrapper(stepCounterViewModel)
+                    NavigationWrapper(stepCounterViewModel, userSessionViewModel)
                 }
             }
         }

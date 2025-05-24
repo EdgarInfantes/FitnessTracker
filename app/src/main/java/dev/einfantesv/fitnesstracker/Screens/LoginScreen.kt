@@ -4,31 +4,45 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import dev.einfantesv.fitnesstracker.R
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.animation.AnimatedVisibility
+import dev.einfantesv.fitnesstracker.UserSessionViewModel
+
 @Composable
-fun LoginScreen(navController: NavHostController) {
+fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSessionViewModel) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
+    var emailError by remember { mutableStateOf(false) }
+    var passwordError by remember { mutableStateOf(false) }
+
+    // Lista de credenciales válidas (temporales)
+    val validCredentials = listOf(
+        "dirtyyr2012@gmail.com" to "123",
+        "melva.66.2002@gmail.com" to "456",
+        "alxmeza63@gmail.com" to "789"
+    )
 
     Column(
         modifier = Modifier
@@ -52,6 +66,17 @@ fun LoginScreen(navController: NavHostController) {
             modifier = Modifier.fillMaxWidth(),
         )
 
+        AnimatedVisibility(visible = emailError) {
+            Text(
+                text = "Correo inválido o vacío",
+                color = Color.Red,
+                fontSize = 14.sp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, start = 4.dp)
+            )
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         // Campo Password con boton para mostrar contraseña
@@ -69,7 +94,7 @@ fun LoginScreen(navController: NavHostController) {
                 val image = if (showPassword)
                     Icons.Default.Visibility
                 else
-                    Icons.Default.VisibilityOff //Cambiar
+                    Icons.Default.VisibilityOff
 
                 val description = if (showPassword) "Ocultar contraseña" else "Mostrar contraseña"
 
@@ -80,6 +105,16 @@ fun LoginScreen(navController: NavHostController) {
             modifier = Modifier.fillMaxWidth()
         )
 
+        AnimatedVisibility(visible = passwordError) {
+            Text(
+                text = "Contraseña inválida o vacía",
+                color = Color.Red,
+                fontSize = 14.sp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, start = 4.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -91,15 +126,31 @@ fun LoginScreen(navController: NavHostController) {
                 .clickable {
                     // Aquí va la acción para recuperar contraseña
                 },
-            color = Color(0xFF7948DB)
+            color = Color(0xFF7948DB),
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
         // Botón iniciar sesión con cuenta Fitness Track
         Button(
-            onClick = {navController.navigate("home")},
-            modifier = Modifier.fillMaxWidth()
+            onClick = {
+                emailError = email.isBlank()
+                passwordError = password.isBlank()
+
+                if (!emailError && !passwordError) {
+                    if (validCredentials.any { it.first == email && it.second == password }) {
+                        userSessionViewModel.setUserEmail(email)
+                        navController.navigate("home")
+                    } else {
+                        emailError = true
+                        passwordError = true
+                    }
+                }
+            },
+            modifier = Modifier
+                .width(280.dp)
                 .height(50.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF7948DB),
@@ -107,34 +158,31 @@ fun LoginScreen(navController: NavHostController) {
             )
         ) {
             Text("Iniciar sesión",
-                style = MaterialTheme.typography.bodyMedium)
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp)
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Registro de usuario
         Row {
-            Text(text = "¿No tienes cuenta?")
+            Text(text = "¿No tienes cuenta?", fontSize = 16.sp)
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "Regístrate",
                 color = Color(0xFF7948DB),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
                 modifier = Modifier.clickable {
-                    // Acción ir a registro
                     navController.navigate("register")
                 }
             )
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Botones alternativos (Google y Apple)
-        Text(text = "O", style = MaterialTheme.typography.bodyMedium)
-
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(45.dp))
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -142,19 +190,19 @@ fun LoginScreen(navController: NavHostController) {
                 onClick = {
                     // Acción inicio con Google
                 },
-                //Fondo blanco y color 7948DB
-                modifier = Modifier.weight(1f)
-                    .height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                modifier = Modifier
+                    .width(280.dp)
+                    .height(50.dp)
+                    .shadow(6.dp, RoundedCornerShape(8.dp)),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                shape = RoundedCornerShape(8.dp)
             ) {
-                //Loogo de Google
                 Image(
                     painter = painterResource(id = R.drawable.google),
                     contentDescription = "Login with Google",
                     modifier = Modifier.size(25.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                //Color negro y negrita
                 Text(
                     "Continuar con Google",
                     color = Color(0xFF000000),
