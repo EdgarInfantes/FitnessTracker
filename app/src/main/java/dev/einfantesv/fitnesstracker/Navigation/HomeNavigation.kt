@@ -33,10 +33,10 @@ fun HomeNavigation(mainNavController: NavHostController, stepCounterViewModel: S
             startDestination = BottomNavItem.Home.route,
             modifier = Modifier.padding(padding)
         ) {
+            composable(BottomNavItem.Data.route) { DataUserScreen(mainNavController) }
             composable(BottomNavItem.Home.route) {
                 HomeScreen(mainNavController, stepCounterViewModel, userSessionViewModel)
             }
-            composable(BottomNavItem.Data.route) { DataUserScreen(mainNavController) }
             composable(BottomNavItem.Prizes.route) { PrizesScreen(mainNavController) }
             composable(BottomNavItem.Profile.route) { ProfileScreen(mainNavController) }
             // Agregar más pantallas

@@ -1,4 +1,4 @@
-package dev.einfantesv.fitnesstracker.Screens
+package dev.einfantesv.fitnesstracker.Screens.util
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -13,7 +13,7 @@ import dev.einfantesv.fitnesstracker.R
 
 @Composable
 fun SplashScreen() {
-    val SplashBackgroundColor = Color.White
+    val SplashBackgroundColor = Color(0xFF7948DB)
     Box(
         modifier = Modifier
             .fillMaxSize()

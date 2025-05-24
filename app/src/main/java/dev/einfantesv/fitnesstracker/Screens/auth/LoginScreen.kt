@@ -1,5 +1,6 @@
-package dev.einfantesv.fitnesstracker.Screens
+package dev.einfantesv.fitnesstracker.Screens.auth
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -8,25 +9,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import dev.einfantesv.fitnesstracker.R
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
 
 @Composable
@@ -52,7 +52,12 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = "Iniciar sesión", style = MaterialTheme.typography.headlineMedium)
+        //Texo Iniciar sesión
+        Text(
+            text = "Iniciar sesión",
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 32.sp),
+            fontWeight = FontWeight.Bold
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -124,7 +129,7 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
             modifier = Modifier
                 .align(Alignment.End)
                 .clickable {
-                    // Aquí va la acción para recuperar contraseña
+                    navController.navigate("forgot_password")
                 },
             color = Color(0xFF7948DB),
             fontSize = 17.sp,
@@ -150,7 +155,7 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
                 }
             },
             modifier = Modifier
-                .width(280.dp)
+                .fillMaxWidth()
                 .height(50.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF7948DB),
@@ -191,7 +196,7 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
                     // Acción inicio con Google
                 },
                 modifier = Modifier
-                    .width(280.dp)
+                    .fillMaxWidth()
                     .height(50.dp)
                     .shadow(6.dp, RoundedCornerShape(8.dp)),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White),
