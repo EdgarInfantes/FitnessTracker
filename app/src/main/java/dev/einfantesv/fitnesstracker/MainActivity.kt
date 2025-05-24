@@ -10,7 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
 import dev.einfantesv.fitnesstracker.Navigation.NavigationWrapper
-import dev.einfantesv.fitnesstracker.Screens.SplashScreen
+import dev.einfantesv.fitnesstracker.Screens.util.SplashScreen
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {

@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import dev.einfantesv.fitnesstracker.Permissions.RequestActivityRecognitionPermission
-import dev.einfantesv.fitnesstracker.R
 import dev.einfantesv.fitnesstracker.StepCounterViewModel
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
 import kotlinx.coroutines.delay

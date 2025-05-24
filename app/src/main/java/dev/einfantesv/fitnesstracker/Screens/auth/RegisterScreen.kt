@@ -1,4 +1,4 @@
-package dev.einfantesv.fitnesstracker.screens
+package dev.einfantesv.fitnesstracker.screens.auth
 
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
@@ -19,6 +19,7 @@ import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.einfantesv.fitnesstracker.R
+import dev.einfantesv.fitnesstracker.Screens.util.BackButtonScreen
 
 @Composable
 fun RegisterScreen(navController: NavHostController) {
@@ -40,17 +41,10 @@ fun RegisterScreen(navController: NavHostController) {
         Spacer(modifier = Modifier.height(15.dp))
 
         Box(modifier = Modifier.fillMaxWidth()) {
-            IconButton(
-                onClick = { navController.navigate("login") },
-                modifier = Modifier.align(Alignment.CenterStart)
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.baseline_arrow_back_24),
-                    contentDescription = "Volver",
-                    modifier = Modifier.size(30.dp),
-                )
-            }
+            //Agregar icono regresa
+            BackButtonScreen(navController)
 
+            //Texto Crear Cuenta
             Text(
                 text = "Crear mi cuenta",
                 style = MaterialTheme.typography.headlineSmall,
@@ -135,7 +129,7 @@ fun RegisterScreen(navController: NavHostController) {
         // Botón Registrarse
         Button(
             onClick = {
-                // Acción de registro
+                navController.navigate("home")
             },
             modifier = Modifier
                 .width(280.dp)
