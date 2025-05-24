@@ -28,7 +28,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import dev.einfantesv.fitnesstracker.Screens.util.BackButtonScreen
+import dev.einfantesv.fitnesstracker.Screens.util.BackTextUtil
 import dev.einfantesv.fitnesstracker.Screens.util.ButtonScreen
+import dev.einfantesv.fitnesstracker.Screens.util.textDescripResetPass
 
 @Composable
 fun VerificationScreen(navController: NavController) {
@@ -41,27 +43,15 @@ fun VerificationScreen(navController: NavController) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        //Fila del boton regresar y Codigo de Veri
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            //Boton Regresar
-            BackButtonScreen(navController)
-
-            //Texto Forgot Password
-            Text(
-                text = "Cdigo de Verificación",
-                style = MaterialTheme.typography.titleLarge.copy(fontSize = 32.sp),
-                fontWeight = FontWeight.Bold
-            )
-        }
+        //Boton y Texto Codigo de Verificacion
+        BackTextUtil(navController, "Código de Verificación")
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Introduzca el código de verificación que acabamos de enviar a su dirección de correo electrónico.",
-            style = MaterialTheme.typography.bodyMedium)
+        textDescripResetPass(
+            "Introduzca el código de verificación " +
+                    "enviamos a su dirección de correo electrónico.",
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -79,8 +69,7 @@ fun VerificationScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        ButtonScreen(navController, "password_changed", "Verificar")
-
+        ButtonScreen(navController, "reset_password", "Verificar")
 
         Spacer(modifier = Modifier.height(16.dp))
     }

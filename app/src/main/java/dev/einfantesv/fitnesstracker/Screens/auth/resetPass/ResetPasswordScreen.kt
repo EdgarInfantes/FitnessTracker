@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -27,7 +28,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import dev.einfantesv.fitnesstracker.Screens.util.BackButtonScreen
+import dev.einfantesv.fitnesstracker.Screens.util.BackTextUtil
 import dev.einfantesv.fitnesstracker.Screens.util.ButtonScreen
+import dev.einfantesv.fitnesstracker.Screens.util.textDescripResetPass
 
 @Composable
 fun ResetPasswordScreen(navController: NavController) {
@@ -41,26 +44,15 @@ fun ResetPasswordScreen(navController: NavController) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        //Fila del boton regresar y texto Forgot Password
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            //Boton Regresar
-            BackButtonScreen(navController)
-
-            //Texto Forgot Password
-            Text(
-                text = "Crear Nueva Contraseña",
-                style = MaterialTheme.typography.titleLarge.copy(fontSize = 32.sp),
-                fontWeight = FontWeight.Bold
-            )
-        }
+        //Boton y Texto Crear Nueva Contraseña
+        BackTextUtil(navController, "Crear Nueva Contraseña")
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Su nueva contraseña debe ser única respecto a las utilizadas anteriormente.", style = MaterialTheme.typography.bodyMedium)
+        textDescripResetPass(
+            "Su nueva contraseña debe ser " +
+                    "única respecto a las utilizadas anteriormente."
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
