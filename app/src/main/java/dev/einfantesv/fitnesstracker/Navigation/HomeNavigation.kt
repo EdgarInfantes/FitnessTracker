@@ -13,7 +13,8 @@ import dev.einfantesv.fitnesstracker.StepCounterViewModel
 import dev.einfantesv.fitnesstracker.screens.HomeScreen
 
 @Composable
-fun HomeNavigation(mainNavController: NavHostController, stepCounterViewModel: StepCounterViewModel) {
+fun HomeNavigation(mainNavController: NavHostController, stepCounterViewModel: StepCounterViewModel)
+ {
     val bottomNavController = rememberNavController()
     val items = listOf(
         BottomNavItem.Home,
@@ -31,8 +32,8 @@ fun HomeNavigation(mainNavController: NavHostController, stepCounterViewModel: S
             composable(BottomNavItem.Home.route) {
                 HomeScreen(mainNavController, stepCounterViewModel)
             }
-            composable(BottomNavItem.Profile.route) { ProfileScreen(mainNavController) }
-            // Agregar más pantallas
+            composable(BottomNavItem.Profile.route) { ProfileScreen(mainNavController)
+            }
         }
     }
 }

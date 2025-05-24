@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
                     ),
                     enter = fadeIn()
                 ) {
-                    SplashScreen()
+                    SplashScreen(onFinish = { showSplash = false })
                 }
 
                 if (!showSplash) {

@@ -5,10 +5,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -134,7 +136,7 @@ fun StepCircle(
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
-                imageVector = Icons.Filled.DirectionsWalk,
+                imageVector = Icons.Filled.DirectionsRun,
                 contentDescription = "Persona caminando",
                 modifier = Modifier.size(40.dp),
                 tint = Color(0xFF7948DB)
