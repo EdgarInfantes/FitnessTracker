@@ -1,6 +1,7 @@
 package dev.einfantesv.fitnesstracker.Screens.auth.resetPass
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -28,7 +30,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import dev.einfantesv.fitnesstracker.Screens.util.BackButtonScreen
+import dev.einfantesv.fitnesstracker.Screens.util.BackTextUtil
 import dev.einfantesv.fitnesstracker.Screens.util.ButtonScreen
+import dev.einfantesv.fitnesstracker.Screens.util.textDescripResetPass
 
 @Composable
 fun ForgotPasswordScreen(navController: NavController) {
@@ -37,32 +41,23 @@ fun ForgotPasswordScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        //Fila del boton regresar y texto Forgot Password
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            //Boton Regresar
-            BackButtonScreen(navController)
+        Spacer(modifier = Modifier.height(15.dp))
 
-            //Texto Forgot Password
-            Text(
-                text = "¿Olvidaste tu contraseña?",
-                style = MaterialTheme.typography.titleLarge.copy(fontSize = 32.sp),
-                fontWeight = FontWeight.Bold
-            )
-        }
+        //Boton y Texto: Olvidaste tu contraseña?
+        BackTextUtil(navController, "¿Olvidaste tu contraseña?")
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Ingrese su dirección de correo electrónico a continuación y le enviaremos un código de verificación para ayudarlo a restablecer sus contraseñas.",
-            style = MaterialTheme.typography.bodyMedium)
+        textDescripResetPass(
+            "Ingrese su dirección de correo electrónico a continuación" +
+                    " y le enviaremos un código de verificación para " +
+                    "ayudarlo a restablecer sus contraseñas."
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 

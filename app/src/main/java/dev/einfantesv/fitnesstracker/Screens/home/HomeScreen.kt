@@ -1,4 +1,4 @@
-package dev.einfantesv.fitnesstracker.screens
+package dev.einfantesv.fitnesstracker.screens.home
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -28,26 +28,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import dev.einfantesv.fitnesstracker.Permissions.RequestActivityRecognitionPermission
+import dev.einfantesv.fitnesstracker.Permissions.rememberRequestActivityRecognitionPermission
+import dev.einfantesv.fitnesstracker.Screens.util.asyncImgPerfil
 import dev.einfantesv.fitnesstracker.StepCounterViewModel
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
 import kotlinx.coroutines.delay
 
+
 @Composable
-fun HomeScreen(navController: NavHostController, stepCounterViewModel: StepCounterViewModel, userSessionViewModel: UserSessionViewModel) {
+fun HomeScreen(
+    navController: NavHostController,
+    stepCounterViewModel: StepCounterViewModel,
+    userSessionViewModel: UserSessionViewModel
+) {
+    val email by userSessionViewModel.userEmail.collectAsState(initial = null)
+    val profileImageUrl by userSessionViewModel.profileImageUrl.collectAsState()
     var hasPermission by remember { mutableStateOf(false) }
     var elapsedMinutes by remember { mutableStateOf(0) }
-    val email by userSessionViewModel.userEmail.collectAsState(initial = null)
 
-    val profileImageUrl = when (email.orEmpty()) {
-        "dirtyyr2012@gmail.com" -> "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fstatic.wikia.nocookie.net%2Fficcion-sin-limites%2Fimages%2F5%2F50%2FJOEL.webp%2Frevision%2Flatest%2Fscale-to-width-down%2F1200%3Fcb%3D20220416041602%26path-prefix%3Des&f=1&nofb=1&ipt=cb58cd4c3f6a55df0864d5ff84ba4f4528e0ba1c62873aa897c036e63e0e281a"
-        "melva.66.2002@gmail.com" -> "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fstatic.wikia.nocookie.net%2Falfondohaysitio%2Fimages%2F8%2F8d%2FTeresa_(AFHS10).png%2Frevision%2Flatest%2Fscale-to-width-down%2F1200%3Fcb%3D20230512183136%26path-prefix%3Des&f=1&nofb=1&ipt=43dcb505b33a1ebc70b10d28d3e315e45dc6d940f60e2b1aac71c218b83c0687"
-        "alxmeza63@gmail.com" -> "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.pinimg.com%2Foriginals%2F76%2Fe7%2F48%2F76e7484504c6ae8efd1a4df5cdd282f5.jpg&f=1&nofb=1&ipt=1859c5713cf98d3d0fd2f04e4551aeab46c59786d68af1624dc37df079439b94"
-        else -> ""
-    }
-
-    // Solicitar permiso solo una vez (o cuando cambia hasPermission)
-    RequestActivityRecognitionPermission { granted ->
+    // Solicitud de permiso reutilizable
+    val requestPermission = rememberRequestActivityRecognitionPermission { granted ->
         hasPermission = granted
         if (granted) {
             stepCounterViewModel.startListening()
@@ -56,12 +56,16 @@ fun HomeScreen(navController: NavHostController, stepCounterViewModel: StepCount
         }
     }
 
+    // Lanzar una vez al inicio
+    LaunchedEffect(Unit) {
+        requestPermission()
+    }
 
-    // Contador de tiempo activo (minutos)
+    // Contador de minutos activos
     LaunchedEffect(hasPermission) {
         if (hasPermission) {
             while (true) {
-                delay(60_000) // 1 minuto
+                delay(60_000)
                 elapsedMinutes++
             }
         } else {
@@ -84,29 +88,16 @@ fun HomeScreen(navController: NavHostController, stepCounterViewModel: StepCount
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Imagen perfil arriba a la derecha con fondo blanco y borde negro redondo
-        if (profileImageUrl.isNotEmpty()) {
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
-                    .background(Color.White, CircleShape) // fondo blanco circular
-                    .border(2.dp, Color.Black, CircleShape) // borde negro circular
-                    .clip(CircleShape) // recorte circular
-            ) {
-                AsyncImage(
-                    model = profileImageUrl,
-                    contentDescription = "Imagen de perfil",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
-            }
+        // Imagen de perfil
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+        ) {
+            asyncImgPerfil(profileImageUrl, 80)
         }
 
-        // Column intacto, sin cambios
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -122,7 +113,6 @@ fun HomeScreen(navController: NavHostController, stepCounterViewModel: StepCount
                     calories = calculateCalories(stepCounterViewModel.stepCount.value),
                     distance = 0
                 )
-                // Aquí ranking u otros elementos
             } else {
                 StepCircle(
                     permissionGranted = false,
@@ -132,13 +122,14 @@ fun HomeScreen(navController: NavHostController, stepCounterViewModel: StepCount
                     distance = 0
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { hasPermission = true }) {
+                Button(onClick = { requestPermission() }) {
                     Text(text = "Activar permiso")
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun StepCircle(
@@ -191,6 +182,7 @@ fun StepCircle(
                 Text(
                     text = "0",
                     fontSize = 62.sp,
+                    color = Color(0xFF7948DB),
                     fontWeight = FontWeight.Bold,
                 )
             }

@@ -15,11 +15,10 @@ import androidx.core.content.ContextCompat
 import android.Manifest
 
 @Composable
-fun RequestActivityRecognitionPermission(
+fun rememberRequestActivityRecognitionPermission(
     onPermissionResult: (granted: Boolean) -> Unit
-) {
+): () -> Unit {
     val context = LocalContext.current
-
     var permissionGranted by remember { mutableStateOf(false) }
 
     val launcher = rememberLauncherForActivityResult(
@@ -30,20 +29,69 @@ fun RequestActivityRecognitionPermission(
         }
     )
 
-    LaunchedEffect(Unit) {
-        permissionGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    // Función retornada que puede ser llamada desde cualquier parte
+    return {
+        val shouldRequest = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.ACTIVITY_RECOGNITION
-            ) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true // Menor API no necesita permiso
-        }
+            ) != PackageManager.PERMISSION_GRANTED
+        } else false
 
-        if (!permissionGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (shouldRequest) {
             launcher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
         } else {
             onPermissionResult(true)
         }
     }
 }
+
+@Composable
+fun rememberRequestMediaPermissions(
+    onResult: (granted: Boolean) -> Unit
+): () -> Unit {
+    val context = LocalContext.current
+    val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        Manifest.permission.READ_MEDIA_IMAGES
+    } else {
+        Manifest.permission.READ_EXTERNAL_STORAGE
+    }
+
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        onResult(isGranted)
+    }
+
+    return {
+        val isGranted = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+        if (isGranted) {
+            onResult(true)
+        } else {
+            launcher.launch(permission)
+        }
+    }
+}
+@Composable
+fun rememberRequestCameraPermission(onResult: (granted: Boolean) -> Unit): () -> Unit {
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        onResult(isGranted)
+    }
+
+    return {
+        val isGranted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (isGranted) {
+            onResult(true)
+        } else {
+            launcher.launch(Manifest.permission.CAMERA)
+        }
+    }
+}
+
