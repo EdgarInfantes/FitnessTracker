@@ -1,6 +1,5 @@
 package dev.einfantesv.fitnesstracker.screens.auth
 
-import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.compose.foundation.layout.*
@@ -13,12 +12,11 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.einfantesv.fitnesstracker.R
 import dev.einfantesv.fitnesstracker.Screens.util.BackButtonScreen
 
 @Composable
@@ -132,7 +130,7 @@ fun RegisterScreen(navController: NavHostController) {
                 navController.navigate("home")
             },
             modifier = Modifier
-                .width(280.dp)
+                .fillMaxWidth()
                 .height(50.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF7948DB),
