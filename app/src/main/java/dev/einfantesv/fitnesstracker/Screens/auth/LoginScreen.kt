@@ -41,7 +41,8 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
     val validCredentials = listOf(
         "dirtyyr2012@gmail.com" to "123",
         "melva.66.2002@gmail.com" to "456",
-        "alxmeza63@gmail.com" to "789"
+        "alxmeza63@gmail.com" to "789",
+        "admin" to "admin"
     )
 
     Column(
