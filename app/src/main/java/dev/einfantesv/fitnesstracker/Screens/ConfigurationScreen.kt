@@ -17,15 +17,14 @@ import dev.einfantesv.fitnesstracker.R
 
 @Composable
 fun ConfigurationScreen(onContinue: () -> Unit) {
+    val context = LocalContext.current
+
     var selectedGenero by remember { mutableStateOf("Femenino") }
-    var selectedNacimiento by remember { mutableStateOf("2000") }
-    var selectedPeso by remember { mutableStateOf("70 kg") }
-    var selectedAltura by remember { mutableStateOf("170 cm") }
+    var nacimiento by remember { mutableStateOf("") }
+    var peso by remember { mutableStateOf("") }
+    var altura by remember { mutableStateOf("") }
 
     val generos = listOf("Femenino", "Masculino", "Otro")
-    val anios = (1950..2025).map { it.toString() }
-    val pesos = (30..200).map { "$it kg" }
-    val alturas = (100..220).map { "$it cm" }
 
     Column(
         modifier = Modifier
@@ -38,15 +37,102 @@ fun ConfigurationScreen(onContinue: () -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Género con dropdown
         DropdownWithIcon("Género", generos, selectedGenero, { selectedGenero = it }, painterResource(R.drawable.mujer))
-        DropdownWithIcon("Año de nacimiento", anios, selectedNacimiento, { selectedNacimiento = it }, painterResource(R.drawable.pastel))
-        DropdownWithIcon("Peso", pesos, selectedPeso, { selectedPeso = it }, painterResource(R.drawable.bascula))
-        DropdownWithIcon("Altura", alturas, selectedAltura, { selectedAltura = it }, painterResource(R.drawable.altura))
+
+        // Año de nacimiento, peso y altura como input numérico
+        InputWithIcon(
+            label = "Año de nacimiento (1950 - 2025)",
+            value = nacimiento,
+            onValueChange = { nacimiento = it },
+            icon = painterResource(R.drawable.pastel),
+            range = 1950..2025,
+            errorMessage = "Año inválido"
+        )
+
+        InputWithIcon(
+            label = "Peso (30 - 200 kg)",
+            value = peso,
+            onValueChange = { peso = it },
+            icon = painterResource(R.drawable.bascula),
+            range = 30..200,
+            errorMessage = "Peso inválido"
+        )
+
+        InputWithIcon(
+            label = "Altura (100 - 220 cm)",
+            value = altura,
+            onValueChange = { altura = it },
+            icon = painterResource(R.drawable.altura),
+            range = 100..220,
+            errorMessage = "Altura inválida"
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Button(onClick = { onContinue() }, modifier = Modifier.fillMaxWidth()) {
+        Button(onClick = {
+            val nacimientoVal = nacimiento.toIntOrNull()
+            val pesoVal = peso.toIntOrNull()
+            val alturaVal = altura.toIntOrNull()
+
+            if (nacimientoVal !in 1950..2025 || pesoVal !in 30..200 || alturaVal !in 100..220) {
+                Toast.makeText(context, "Revisa los campos ingresados", Toast.LENGTH_SHORT).show()
+            } else {
+                onContinue()
+            }
+        }, modifier = Modifier.fillMaxWidth()) {
             Text("Continuar")
+        }
+    }
+}
+
+@Composable
+fun InputWithIcon(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    icon: Painter,
+    range: IntRange,
+    errorMessage: String
+) {
+    val context = LocalContext.current
+    var showError by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.Start
+    ) {
+        Image(
+            painter = icon,
+            contentDescription = null,
+            modifier = Modifier
+                .size(40.dp)
+                .padding(end = 8.dp)
+        )
+
+        Column(modifier = Modifier.weight(1f)) {
+            OutlinedTextField(
+                value = value,
+                onValueChange = {
+                    if (it.all { char -> char.isDigit() }) {
+                        onValueChange(it)
+                        val number = it.toIntOrNull()
+                        showError = number != null && number !in range
+                    }
+                },
+                label = { Text(label) },
+                isError = showError,
+                modifier = Modifier.fillMaxWidth()
+            )
+            if (showError) {
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 12.sp
+                )
+            }
         }
     }
 }
