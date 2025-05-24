@@ -21,7 +21,7 @@ class StepCounterViewModel(application: Application) : AndroidViewModel(applicat
     fun startListening() {
         if (!isListening) {
             stepDetectorSensor?.let {
-                sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
+                sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_FASTEST) //cambiar normal a fastest
                 isListening = true
             }
         }
@@ -36,9 +36,12 @@ class StepCounterViewModel(application: Application) : AndroidViewModel(applicat
 
     override fun onSensorChanged(event: SensorEvent) {
         if (event.sensor.type == Sensor.TYPE_STEP_DETECTOR) {
-            // Actualizar estado en hilo principal para evitar condiciones de carrera
-            // Usando postValue no aplica aquí, mutableState es seguro para Compose
-            stepCount.value += event.values[0].toInt()
+            // Actualizar contador en el hilo principal para seguridad (aunque mutableState es seguro)
+            val steps = event.values[0].toInt()
+            if (steps > 0) {
+                // Asegurarse que se incremente rápido y sin delay
+                stepCount.value += steps
+            }
         }
     }
 
