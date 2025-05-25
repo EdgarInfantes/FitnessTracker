@@ -143,23 +143,6 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(32.dp))
     }
 
-    // Muestra la foto de perfil (Opcion Ver Foto)
-    if (showFullScreen && (profileImageUri != null || profileImageUrl != null)) {
-        AlertDialog(
-            onDismissRequest = { showFullScreen = false },
-            text = {
-                AsyncImage(
-                    model = profileImageUri ?: profileImageUrl,
-                    contentDescription = "Foto de perfil",
-                    modifier = Modifier.fillMaxWidth().aspectRatio(1f),
-                    contentScale = ContentScale.Crop
-                )
-            },
-            confirmButton = {},
-            dismissButton = {}
-        )
-    }
-
     //Opciones para editar la foto de perfil
     if (showImageOptions) {
         AlertDialog(
@@ -182,6 +165,23 @@ fun ProfileScreen(
                         showImageOptions = false
                     }) { Text("Elegir de galería") }
                 }
+            },
+            confirmButton = {},
+            dismissButton = {}
+        )
+    }
+
+    // Muestra la foto de perfil (Opcion Ver Foto)
+    if (showFullScreen && (profileImageUri != null || profileImageUrl != null)) {
+        AlertDialog(
+            onDismissRequest = { showFullScreen = false },
+            text = {
+                AsyncImage(
+                    model = profileImageUri ?: profileImageUrl,
+                    contentDescription = "Foto de perfil",
+                    modifier = Modifier.fillMaxWidth().aspectRatio(1f),
+                    contentScale = ContentScale.Crop
+                )
             },
             confirmButton = {},
             dismissButton = {}
