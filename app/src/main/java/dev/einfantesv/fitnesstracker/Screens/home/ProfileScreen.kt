@@ -163,7 +163,7 @@ fun ProfileScreen(
                     TextButton(onClick = {
                         requestGalleryPermission()
                         showImageOptions = false
-                    }) { Text("Elegir de galería") }
+                    }) { Text("Elegir desde galería") }
                 }
             },
             confirmButton = {},
