@@ -8,7 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DirectionsWalk
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.AccessTime
@@ -33,7 +33,6 @@ import dev.einfantesv.fitnesstracker.Screens.util.asyncImgPerfil
 import dev.einfantesv.fitnesstracker.StepCounterViewModel
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
 import kotlinx.coroutines.delay
-
 
 @Composable
 fun HomeScreen(
@@ -61,12 +60,17 @@ fun HomeScreen(
         requestPermission()
     }
 
-    // Contador de minutos activos
+    // Contador de minutos solo si el usuario camina
     LaunchedEffect(hasPermission) {
         if (hasPermission) {
+            var lastStepCount = stepCounterViewModel.stepCount.value
             while (true) {
-                delay(60_000)
-                elapsedMinutes++
+                delay(60_000) // Espera 1 minuto
+                val currentStepCount = stepCounterViewModel.stepCount.value
+                if (currentStepCount > lastStepCount) {
+                    elapsedMinutes++
+                    lastStepCount = currentStepCount
+                }
             }
         } else {
             elapsedMinutes = 0
@@ -165,7 +169,7 @@ fun StepCircle(
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
-                imageVector = Icons.Filled.DirectionsWalk,
+                imageVector = Icons.AutoMirrored.Filled.DirectionsWalk,
                 contentDescription = "Persona caminando",
                 modifier = Modifier.size(40.dp),
                 tint = Color(0xFF7948DB)
