@@ -62,4 +62,6 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.7") //Navegacion
     implementation("androidx.compose.material:material-icons-extended:1.5.0") //Iconos
     implementation("io.coil-kt:coil-compose:2.3.0") //Links de internet
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0") //Para los graficos
+
 }

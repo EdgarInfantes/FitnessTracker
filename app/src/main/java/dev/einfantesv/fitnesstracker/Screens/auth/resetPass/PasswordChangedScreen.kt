@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
+import dev.einfantesv.fitnesstracker.Screens.util.ActionButton
 import dev.einfantesv.fitnesstracker.Screens.util.ButtonScreen
 
 @Composable
@@ -42,7 +43,9 @@ fun PasswordChangedScreen(navController: NavController){
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        ButtonScreen(navController, "login", "Volver al iniciar sesión")
+        ActionButton("Volver al login") {
+            navController.navigate("login")
+        }
 
     }
 }

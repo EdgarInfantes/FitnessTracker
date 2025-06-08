@@ -27,6 +27,8 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import dev.einfantesv.fitnesstracker.Screens.util.ActionButton
+import dev.einfantesv.fitnesstracker.Screens.util.Headers
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
 
 @Composable
@@ -54,11 +56,7 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
         verticalArrangement = Arrangement.Center
     ) {
         //Texo Iniciar sesión
-        Text(
-            text = "Iniciar sesión",
-            style = MaterialTheme.typography.titleLarge.copy(fontSize = 32.sp),
-            fontWeight = FontWeight.Bold
-        )
+        Headers("Iniciar Sesion")
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -139,34 +137,21 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Botón iniciar sesión con cuenta Fitness Track
-        Button(
-            onClick = {
-                emailError = email.isBlank()
-                passwordError = password.isBlank()
+        ActionButton(label = "Iniciar sesión") {
+            emailError = email.isBlank()
+            passwordError = password.isBlank()
 
-                if (!emailError && !passwordError) {
-                    if (validCredentials.any { it.first == email && it.second == password }) {
-                        userSessionViewModel.setUserEmail(email)
-                        navController.navigate("home")
-                    } else {
-                        emailError = true
-                        passwordError = true
-                    }
+            if (!emailError && !passwordError) {
+                if (validCredentials.any { it.first == email && it.second == password }) {
+                    userSessionViewModel.setUserEmail(email)
+                    navController.navigate("home")
+                } else {
+                    emailError = true
+                    passwordError = true
                 }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF7948DB),
-                contentColor = Color.White
-            )
-        ) {
-            Text("Iniciar sesión",
-                style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp)
-            )
+            }
         }
+
 
         Spacer(modifier = Modifier.height(16.dp))
 
