@@ -41,7 +41,7 @@ class StepCounterViewModel(application: Application) : AndroidViewModel(applicat
 
     override fun onSensorChanged(event: SensorEvent) {
         if (event.sensor.type == Sensor.TYPE_STEP_DETECTOR) {
-            // Actualizar contador en el hilo principal para seguridad (aunque mutableState es seguro)
+            // Actualizar contador en el hilo principal para seguridad
             val steps = event.values[0].toInt()
             if (steps > 0) {
                 // Asegurarse que se incremente rápido y sin delay
