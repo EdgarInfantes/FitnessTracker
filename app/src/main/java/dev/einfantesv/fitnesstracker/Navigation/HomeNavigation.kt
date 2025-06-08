@@ -33,7 +33,7 @@ fun HomeNavigation(mainNavController: NavHostController, stepCounterViewModel: S
             startDestination = BottomNavItem.Home.route,
             modifier = Modifier.padding(padding)
         ) {
-            composable(BottomNavItem.Data.route) { DataUserScreen(mainNavController) }
+            composable(BottomNavItem.Data.route) { DataUserScreen(mainNavController, stepCounterViewModel) }
             composable(BottomNavItem.Home.route) {
                 HomeScreen(mainNavController, stepCounterViewModel, userSessionViewModel)
             }

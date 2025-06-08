@@ -1,11 +1,8 @@
 package dev.einfantesv.fitnesstracker.screens.home
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsWalk
@@ -16,18 +13,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImage
 import dev.einfantesv.fitnesstracker.Permissions.rememberRequestActivityRecognitionPermission
 import dev.einfantesv.fitnesstracker.Screens.util.asyncImgPerfil
 import dev.einfantesv.fitnesstracker.StepCounterViewModel
@@ -44,7 +38,8 @@ fun HomeScreen(
     val email by userSessionViewModel.userEmail.collectAsState(initial = null)
     val profileImageUrl by userSessionViewModel.profileImageUrl.collectAsState()
     var hasPermission by remember { mutableStateOf(false) }
-    var elapsedMinutes by remember { mutableStateOf(0) }
+    //var elapsedMinutes by remember { mutableStateOf(0) } Banco
+    val elapsedMinutes by stepCounterViewModel.elapsedMinutes
 
     // Solicitud de permiso reutilizable
     val requestPermission = rememberRequestActivityRecognitionPermission { granted ->
@@ -61,15 +56,20 @@ fun HomeScreen(
         requestPermission()
     }
 
-    // Contador de minutos activos
+    // Contador de minutos solo si el usuario camina
     LaunchedEffect(hasPermission) {
         if (hasPermission) {
+            var lastStepCount = stepCounterViewModel.stepCount.value
             while (true) {
-                delay(60_000)
-                elapsedMinutes++
+                delay(60_000) // Espera 1 minuto
+                val currentStepCount = stepCounterViewModel.stepCount.value
+                if (currentStepCount > lastStepCount) {
+                    //elapsedMinutes++
+                    lastStepCount = currentStepCount
+                }
             }
         } else {
-            elapsedMinutes = 0
+            //elapsedMinutes = 0
         }
     }
 

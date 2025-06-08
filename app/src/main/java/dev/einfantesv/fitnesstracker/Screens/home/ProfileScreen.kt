@@ -24,14 +24,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import dev.einfantesv.fitnesstracker.Permissions.rememberRequestCameraPermission
 import dev.einfantesv.fitnesstracker.Permissions.rememberRequestMediaPermissions
 import dev.einfantesv.fitnesstracker.R
-import dev.einfantesv.fitnesstracker.Screens.util.BackTextUtil
+import dev.einfantesv.fitnesstracker.Screens.util.Headers
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
 import java.io.File
 
@@ -80,7 +79,7 @@ fun ProfileScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(24.dp))
-        BackTextUtil(navController, "Administrar mi cuenta")
+        Headers("Administrar mi cuenta")
         Spacer(modifier = Modifier.height(24.dp))
 
         Box(modifier = Modifier.size(130.dp)) {

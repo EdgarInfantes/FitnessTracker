@@ -17,7 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.einfantesv.fitnesstracker.Screens.util.BackButtonScreen
+import dev.einfantesv.fitnesstracker.Screens.util.ActionButton
+import dev.einfantesv.fitnesstracker.Screens.util.Headers
 
 @Composable
 fun RegisterScreen(navController: NavHostController) {
@@ -38,17 +39,7 @@ fun RegisterScreen(navController: NavHostController) {
     ) {
         Spacer(modifier = Modifier.height(15.dp))
 
-        Box(modifier = Modifier.fillMaxWidth()) {
-            //Agregar icono regresa
-            BackButtonScreen(navController)
-
-            //Texto Crear Cuenta
-            Text(
-                text = "Crear mi cuenta",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        }
+        Headers("Crear mi cuenta", navController, true)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -125,21 +116,12 @@ fun RegisterScreen(navController: NavHostController) {
         Spacer(modifier = Modifier.height(32.dp))
 
         // Botón Registrarse
-        Button(
+        ActionButton(
+            label = "Registrarse",
             onClick = {
-                navController.navigate("home")
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF7948DB),
-                contentColor = Color.White
-            )
-        ) {
-            Text("Registrarse",
-                style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp)
-            )
-        }
+                navController.navigate("login")
+            }
+        )
+
     }
 }

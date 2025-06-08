@@ -29,14 +29,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import dev.einfantesv.fitnesstracker.Screens.util.BackButtonScreen
-import dev.einfantesv.fitnesstracker.Screens.util.BackTextUtil
+import dev.einfantesv.fitnesstracker.Screens.util.ActionButton
 import dev.einfantesv.fitnesstracker.Screens.util.ButtonScreen
+import dev.einfantesv.fitnesstracker.Screens.util.Headers
 import dev.einfantesv.fitnesstracker.Screens.util.textDescripResetPass
 
 @Composable
 fun ForgotPasswordScreen(navController: NavController) {
     var email by remember { mutableStateOf("") }
+    var emailError by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -49,7 +50,7 @@ fun ForgotPasswordScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(15.dp))
 
         //Boton y Texto: Olvidaste tu contraseña?
-        BackTextUtil(navController, "¿Olvidaste tu contraseña?")
+        Headers("¿Olvidaste tu contraseña?", navController, true)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -70,7 +71,15 @@ fun ForgotPasswordScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        ButtonScreen(navController, "verification", "Enviar código")
+        //ButtonScreen(navController, "verification", "Enviar código")
+        ActionButton("Enviar Código") {
+            emailError = email.isBlank()
+            if (!emailError){
+                navController.navigate("verification")
+            }else{
+                emailError = true
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
     }

@@ -27,15 +27,18 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import dev.einfantesv.fitnesstracker.Screens.util.BackButtonScreen
-import dev.einfantesv.fitnesstracker.Screens.util.BackTextUtil
+import dev.einfantesv.fitnesstracker.Screens.util.ActionButton
 import dev.einfantesv.fitnesstracker.Screens.util.ButtonScreen
+import dev.einfantesv.fitnesstracker.Screens.util.Headers
 import dev.einfantesv.fitnesstracker.Screens.util.textDescripResetPass
 
 @Composable
 fun ResetPasswordScreen(navController: NavController) {
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var newPasswordError by remember { mutableStateOf(false) }
+    var confirmPasswordError by remember { mutableStateOf(false) }
+    var coincidenPassword by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -44,8 +47,7 @@ fun ResetPasswordScreen(navController: NavController) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        //Boton y Texto Crear Nueva Contraseña
-        BackTextUtil(navController, "Crear Nueva Contraseña")
+        Headers("Crear Nueva Contraseña", navController, true)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -76,6 +78,18 @@ fun ResetPasswordScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        ButtonScreen(navController, "password_changed", "Restablecer contraseña")
+        ActionButton("Restablecer contraseña") {
+            newPasswordError = newPassword.isBlank()
+            confirmPasswordError = confirmPassword.isBlank()
+            coincidenPassword = newPassword != confirmPassword
+            if (!newPasswordError && !confirmPasswordError && !coincidenPassword) {
+                navController.navigate("password_changed")
+            } else {
+                newPasswordError = true
+                confirmPasswordError = true
+                coincidenPassword = false
+            }
+
+        }
     }
 }

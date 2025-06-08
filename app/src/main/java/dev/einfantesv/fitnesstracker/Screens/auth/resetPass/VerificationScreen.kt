@@ -27,14 +27,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import dev.einfantesv.fitnesstracker.Screens.util.BackButtonScreen
-import dev.einfantesv.fitnesstracker.Screens.util.BackTextUtil
+import dev.einfantesv.fitnesstracker.Screens.util.ActionButton
 import dev.einfantesv.fitnesstracker.Screens.util.ButtonScreen
+import dev.einfantesv.fitnesstracker.Screens.util.Headers
 import dev.einfantesv.fitnesstracker.Screens.util.textDescripResetPass
 
 @Composable
 fun VerificationScreen(navController: NavController) {
     var code by remember { mutableStateOf("") }
+    var codeError by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -44,7 +45,7 @@ fun VerificationScreen(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         //Boton y Texto Codigo de Verificacion
-        BackTextUtil(navController, "Código de Verificación")
+        Headers("Código de Verificación", navController, true)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -69,7 +70,14 @@ fun VerificationScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        ButtonScreen(navController, "reset_password", "Verificar")
+        ActionButton("Verificar") {
+            codeError = code.isBlank()
+            if (!codeError){
+                navController.navigate("reset_password")
+            }else{
+                codeError = true
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
     }
