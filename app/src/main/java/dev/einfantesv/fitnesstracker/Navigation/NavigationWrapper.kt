@@ -11,34 +11,37 @@ import dev.einfantesv.fitnesstracker.Screens.auth.resetPass.ResetPasswordScreen
 import dev.einfantesv.fitnesstracker.Screens.auth.resetPass.VerificationScreen
 import dev.einfantesv.fitnesstracker.StepCounterViewModel
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
-import dev.einfantesv.fitnesstracker.screens.auth.RegisterScreen
-
+import dev.einfantesv.fitnesstracker.Screens.auth.RegisterScreen
 
 @Composable
-fun NavigationWrapper(stepCounterViewModel: StepCounterViewModel, userSessionViewModel: UserSessionViewModel) {
+fun NavigationWrapper(
+    stepCounterViewModel: StepCounterViewModel,
+    userSessionViewModel: UserSessionViewModel,
+    startDestination: String
+) {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = Screens.Login.route) {
-        composable(Screens.Login.route) {
+
+    NavHost(navController = navController, startDestination = startDestination) {
+        composable("login") {
             LoginScreen(navController, userSessionViewModel)
         }
-        composable(Screens.Home.route) {
+        composable("home") {
             HomeNavigation(navController, stepCounterViewModel, userSessionViewModel)
         }
-        composable(Screens.Register.route) {
+        composable("register") {
             RegisterScreen(navController)
         }
-        composable(Screens.ForgotPassword.route) {
+        composable("forgotPassword") {
             ForgotPasswordScreen(navController)
         }
-        composable(Screens.Verification.route) {
+        composable("verification") {
             VerificationScreen(navController)
         }
-        composable(Screens.ResetPassword.route) {
+        composable("resetPassword") {
             ResetPasswordScreen(navController)
         }
-        composable(Screens.PasswordChanged.route) {
+        composable("passwordChanged") {
             PasswordChangedScreen(navController)
         }
-
     }
 }

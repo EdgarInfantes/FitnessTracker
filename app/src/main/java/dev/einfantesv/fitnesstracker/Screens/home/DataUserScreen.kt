@@ -1,7 +1,5 @@
-package dev.einfantesv.fitnesstracker.screens.home
+package dev.einfantesv.fitnesstracker.Screens.home
 
-import android.R.attr.scaleX
-import android.graphics.drawable.GradientDrawable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,8 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,15 +22,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableIntStateOf
 import java.text.NumberFormat
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
-import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
@@ -46,29 +40,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.navigation.NavHostController
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.github.mikephil.charting.charts.BarChart
+import androidx.core.graphics.toColorInt
 import com.github.mikephil.charting.charts.CombinedChart
 import java.time.LocalDate
-import java.time.YearMonth
-import java.time.format.DateTimeFormatter
 import com.github.mikephil.charting.components.LimitLine
 import com.github.mikephil.charting.components.YAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.data.CombinedData
-import com.github.mikephil.charting.highlight.Highlight
-import com.github.mikephil.charting.listener.OnChartValueSelectedListener
 import dev.einfantesv.fitnesstracker.Screens.util.Headers
 import dev.einfantesv.fitnesstracker.Screens.util.coloresDegradados
 import dev.einfantesv.fitnesstracker.StepCounterViewModel
 import java.util.Locale
+import kotlin.random.Random
 
 @Composable
 fun DataUserScreen(navController: NavHostController,
@@ -84,19 +74,16 @@ fun DataUserScreen(navController: NavHostController,
     val stepsToday = stepCounterViewModel.stepCount.value
     val calories = stepCounterViewModel.calories.value
 
-    val stepsLabelsPair by remember(selectedPeriod) {
-        mutableStateOf(
-            when (selectedPeriod) {
-                "Semanal" -> generateWeeklySteps()
-                "Mensual" -> generateMonthlySteps()
-                else -> generateWeeklySteps()
-            }
-        )
+    val stepsLabelsPair = remember(selectedPeriod) {
+        when (selectedPeriod) {
+            "Semanal" -> generateWeeklySteps()
+            "Mensual" -> generateMonthlySteps()
+            else -> generateWeeklySteps()
+        }
     }
 
-    val labels = stepsLabelsPair.first
-    val steps = stepsLabelsPair.second
-
+    val steps = stepsLabelsPair.first
+    val labels = stepsLabelsPair.second
 
     val baseMeta = 6000f
     val meta = when (selectedPeriod) {
@@ -113,8 +100,7 @@ fun DataUserScreen(navController: NavHostController,
         Spacer(modifier = Modifier.height(16.dp))
 
         //Header de la pantalla Datos
-        headerDatos(pasos = stepsToday, calorias = calories.toFloat())
-
+        HeaderDatos(pasos = stepsToday, calorias = calories.toFloat())
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -134,9 +120,9 @@ fun DataUserScreen(navController: NavHostController,
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        val (totalPasos, promedioPasos) = Promedio(steps, isMonthly = selectedPeriod == "Mensual")
+        val (totalPasos, promedioPasos) = promedio(steps, isMonthly = selectedPeriod == "Mensual")
 
-        muestraResumen(
+        MuestraResumen(
             total = totalPasos,
             promedio = promedioPasos,
             unidad = "Pasos"
@@ -147,7 +133,7 @@ fun DataUserScreen(navController: NavHostController,
 }
 
 @Composable
-fun headerDatos(pasos: Int, calorias: Float) {
+fun HeaderDatos(pasos: Int, calorias: Float) {
     /**
      * Encabezado visual que muestra las calorías quemadas y título principal.
      *
@@ -270,31 +256,14 @@ fun PeriodSelector(selected: String, onSelect: (String) -> Unit) {
 }
 
 @Composable
-fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float) {
-    /**
-     * Gráfico combinado que muestra los pasos diarios/mensuales con una línea y una barra
-     * para el valor seleccionado. También muestra una línea de meta.
-     *
-     * @param steps lista de valores de pasos
-     * @param labels etiquetas para el eje X (fechas o meses)
-     * @param meta valor de meta diaria o mensual
-     */
+fun CombinedProgressChart(
+    steps: List<Float>,
+    labels: List<String>,
+    meta: Float
+) {
+    var selectedIndex by remember { mutableIntStateOf(0) }
 
-    var selectedIndex by remember { mutableStateOf(steps.lastIndex) }
-    var showPopup by remember { mutableStateOf(false) }
-
-    if (showPopup) {
-        AlertDialog(
-            onDismissRequest = { showPopup = false },
-            confirmButton = {
-                TextButton(onClick = { showPopup = false }) {
-                    Text("OK")
-                }
-            },
-            title = { Text("¡Bien Hecho!") },
-            text = { Text("Has superado la meta.") }
-        )
-    }
+    selectedIndex = steps.lastIndex.coerceAtLeast(0)
 
     AndroidView(
         factory = { context ->
@@ -303,104 +272,77 @@ fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float)
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
-
+                setBackgroundColor("#F9F9F9".toColorInt())
                 description.isEnabled = false
                 setTouchEnabled(true)
-                setPinchZoom(false)
                 isDoubleTapToZoomEnabled = false
                 setScaleEnabled(false)
                 legend.isEnabled = false
                 axisLeft.isEnabled = false
-
-                setOnChartValueSelectedListener(object : OnChartValueSelectedListener {
-                    override fun onValueSelected(e: Entry?, h: Highlight?) {
-                        e?.x?.toInt()?.let { index ->
-                            selectedIndex = index
-                        }
-                    }
-
-                    override fun onNothingSelected() {
-                        showPopup = false
-                    }
-                })
-
-
-                animateX(1000)
+                axisRight.textSize = 12f
+                axisRight.gridColor = android.graphics.Color.LTGRAY
+                xAxis.setDrawAxisLine(true)
+                xAxis.setDrawGridLines(true)
+                xAxis.gridLineWidth = 1f
+                xAxis.gridColor = android.graphics.Color.LTGRAY
+                animateX(500)
             }
         },
         update = { chart ->
-            // Preparar datos
-            val maxY = maxOf(steps.maxOrNull() ?: 0f, meta * 1.1f)
-            val minY = minOf(steps.minOrNull() ?: 0f, meta * 0.9f)
+            val maxStep = steps.maxOrNull() ?: 0f
+            val roundedMax = ((maxStep + 500) / 500).toInt() * 500f // redondea hacia arriba al siguiente múltiplo de 500
+            val maxY = maxOf(roundedMax, meta)
 
-            // Configurar eje Y
             chart.axisRight.apply {
-                axisMinimum = minY
+                axisMinimum = 0f
                 axisMaximum = maxY
-                labelCount = 5
-                textSize = 12f
-                setDrawGridLines(true)
+                labelCount = 6
                 removeAllLimitLines()
-
-                val limitLine = LimitLine(meta, "Meta")
-                limitLine.lineColor = android.graphics.Color.GRAY
-                limitLine.lineWidth = 1.5f
-                limitLine.labelPosition = LimitLine.LimitLabelPosition.LEFT_TOP
-                limitLine.textSize = 12f
-                limitLine.enableDashedLine(10f, 10f, 0f)
+                val limitLine = LimitLine(meta, meta.toInt().toString()).apply {
+                    lineColor = android.graphics.Color.RED
+                    lineWidth = 2f
+                    textColor = android.graphics.Color.RED
+                    textSize = 12f
+                    labelPosition = LimitLine.LimitLabelPosition.RIGHT_TOP
+                }
                 addLimitLine(limitLine)
             }
 
-            // Configurar eje X con etiquetas multilínea
             chart.xAxis.apply {
                 position = XAxis.XAxisPosition.BOTTOM
                 granularity = 1f
-                setDrawGridLines(false)
+                setDrawGridLines(true)
                 setDrawLabels(true)
-                textSize = 10f
-                labelCount = labels.size
-                labelRotationAngle = -90f
-                setAvoidFirstLastClipping(true)
                 valueFormatter = IndexAxisValueFormatter(labels)
             }
 
-            // Línea de pasos
-            val lineEntries = steps.mapIndexed { index, value ->
-                Entry(index.toFloat(), value)
-            }
-
-            val lineDataSet = LineDataSet(lineEntries, "Pasos").apply {
+            val lineEntries = steps.mapIndexed { i, v -> Entry(i.toFloat(), v) }
+            val lineSet = LineDataSet(lineEntries, "Pasos").apply {
                 mode = LineDataSet.Mode.CUBIC_BEZIER
-                color = android.graphics.Color.parseColor("#7948DB")
-                setCircleColor(android.graphics.Color.parseColor("#7948DB"))
-                setDrawCircles(true)
-                circleRadius = 5f
+                color = "#7948DB".toColorInt()
+                setCircleColor("#7948DB".toColorInt())
+                circleRadius = 6f
                 lineWidth = 2f
-                setDrawFilled(false)
+                setDrawFilled(true)
+                fillColor = "#D1C4E9".toColorInt()
+                fillAlpha = 100
                 valueTextSize = 10f
                 axisDependency = YAxis.AxisDependency.RIGHT
             }
 
-            // Barra resaltada
             val highlightEntry = BarEntry(selectedIndex.toFloat(), steps[selectedIndex])
-            val barDataSet = BarDataSet(listOf(highlightEntry), "Resaltado").apply {
+            val barSet = BarDataSet(listOf(highlightEntry), "selected").apply {
                 setDrawValues(false)
-                setGradientColor(0xFF7948DB.toInt(), 0xFFFFFFFF.toInt())
-                barShadowColor = android.graphics.Color.TRANSPARENT
+                color = "#FF4081".toColorInt()
                 axisDependency = YAxis.AxisDependency.RIGHT
             }
 
-            val combinedData = CombinedData().apply {
-                setData(LineData(lineDataSet))
-                setData(BarData(barDataSet))
+            val combined = CombinedData().apply {
+                setData(LineData(lineSet))
+                setData(BarData(barSet))
             }
 
-            if (selectedIndex in steps.indices && steps[selectedIndex] > meta) {
-                showPopup = true
-            }
-
-            chart.data = combinedData
-            chart.notifyDataSetChanged()
+            chart.data = combined
             chart.invalidate()
         },
         modifier = Modifier
@@ -410,7 +352,7 @@ fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float)
 }
 
 @Composable
-fun muestraResumen(total: Int, promedio: Int, unidad: String = "Kcal") {
+fun MuestraResumen(total: Int, promedio: Int, unidad: String = "Kcal") {
     /**
      * Muestra un recuadro con el total y el promedio de pasos o calorías.
      *
@@ -473,7 +415,7 @@ fun muestraResumen(total: Int, promedio: Int, unidad: String = "Kcal") {
 }
 
 
-fun Promedio(valores: List<Float>, isMonthly: Boolean): Pair<Int, Int> {
+fun promedio(valores: List<Float>, isMonthly: Boolean): Pair<Int, Int> {
     /**
      * Calcula el total y el promedio de una lista de valores.
      *
@@ -482,48 +424,35 @@ fun Promedio(valores: List<Float>, isMonthly: Boolean): Pair<Int, Int> {
      * @return Pair con total y promedio de valores
      */
     val total = valores.sum().toInt()
-    val dias = if (isMonthly) LocalDate.now().lengthOfMonth() else 7
-    val promedio = if (dias > 0) total / dias else 0
+    val cantidad = valores.size
+    val promedio = if (cantidad > 0) total / cantidad else 0
     return Pair(total, promedio)
 }
 
 
-fun generateWeeklySteps(): Pair<List<String>, List<Float>> {
+fun generateWeeklySteps(): Pair<List<Float>, List<String>> {
     /**
      * Genera etiquetas y valores de pasos simulados para los últimos 7 días.
      *
      * @return Pair de lista de etiquetas con fecha y lista de valores de pasos
      */
-    val today = LocalDate.now()
-    val dayFormatter = DateTimeFormatter.ofPattern("EEE", Locale("es"))
-    val dateFormatter = DateTimeFormatter.ofPattern("dd MMM", Locale("es"))
-    val days = (0..6).map { today.minusDays((6 - it).toLong()) }
-    val labels = days.map { "${it.format(dayFormatter)} \n ${it.format(dateFormatter)}" }
-    val steps = listOf(4500f, 6200f, 5800f, 7200f, 5000f, 6900f, 6100f)
-    return Pair(labels, steps)
+    val steps = List(7) { Random.nextInt(1000, 10000).toFloat() }
+    val labels = listOf("L", "M", "X", "J", "V", "S", "D") // Etiquetas fijas
+    return Pair(steps, labels)
 }
 
-fun generateMonthlySteps(): Pair<List<String>, List<Float>> {
+fun generateMonthlySteps(): Pair<List<Float>, List<String>> {
     /**
      * Genera etiquetas y pasos simulados para los últimos 7 meses.
      *
      * @return Pair con etiquetas de meses y valores de pasos por mes
      */
 
-    // Formato con salto de línea: "Ene\n2025" y en español
-    val formatter = DateTimeFormatter.ofPattern("MMM \n yyyy", Locale("es"))
+    val currentMonth = LocalDate.now().monthValue
+    val monthLabels = listOf("En", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
 
-    // Mes actual
-    val thisMonth = YearMonth.now()
+    val labels = (1..currentMonth).map { monthLabels[it - 1] }
+    val steps = List(currentMonth) { Random.nextInt(1000, 10000).toFloat() }
 
-    // Últimos 6 meses (desde hace 5 hasta este mes)
-    val months = (0..6).map { thisMonth.minusMonths((6 - it).toLong()) }
-
-    // Convertimos YearMonth a LocalDate (día 1) para poder formatearlo
-    val labels = months.map { it.atDay(1).format(formatter) }
-
-    // Valores de pasos, debe tener exactamente la misma longitud que labels (6)
-    val steps = listOf(110000f, 120000f, 135000f, 118000f, 142000f, 130000f, 190000f)
-
-    return Pair(labels, steps)
+    return Pair(steps, labels)
 }

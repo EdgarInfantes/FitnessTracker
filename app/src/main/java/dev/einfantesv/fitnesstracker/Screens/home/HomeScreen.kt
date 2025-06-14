@@ -1,4 +1,4 @@
-package dev.einfantesv.fitnesstracker.screens.home
+package dev.einfantesv.fitnesstracker.Screens.home
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
@@ -27,7 +27,6 @@ import dev.einfantesv.fitnesstracker.Screens.util.asyncImgPerfil
 import dev.einfantesv.fitnesstracker.StepCounterViewModel
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
 import kotlinx.coroutines.delay
-
 
 @Composable
 fun HomeScreen(

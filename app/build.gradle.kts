@@ -41,7 +41,6 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -63,5 +62,7 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.5.0") //Iconos
     implementation("io.coil-kt:coil-compose:2.3.0") //Links de internet
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0") //Para los graficos
-
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation ("androidx.datastore:datastore-preferences:1.0.0")
 }
