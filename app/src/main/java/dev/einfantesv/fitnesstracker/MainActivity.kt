@@ -11,8 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
 import dev.einfantesv.fitnesstracker.Navigation.NavigationWrapper
 import dev.einfantesv.fitnesstracker.Screens.util.SplashScreen
-import dev.einfantesv.fitnesstracker.UserSessionViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 
 class MainActivity : ComponentActivity() {
 
@@ -27,17 +27,26 @@ class MainActivity : ComponentActivity() {
             ViewModelProvider.AndroidViewModelFactory.getInstance(application)
         )[StepCounterViewModel::class.java]
 
-        userSessionViewModel = ViewModelProvider(this)[UserSessionViewModel::class.java]
+        userSessionViewModel = ViewModelProvider(
+            this,
+            ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+        )[UserSessionViewModel::class.java]
 
         setContent {
             var showSplash by remember { mutableStateOf(true) }
             var splashVisible by remember { mutableStateOf(true) }
+            var startDestination by remember { mutableStateOf<String?>(null) }
 
+            // Cargar el correo desde DataStore
             LaunchedEffect(Unit) {
-                delay(3000)
-                splashVisible = false
-                delay(500)
-                showSplash = false
+                userSessionViewModel.loadUserEmailFromDataStore()
+                userSessionViewModel.userEmail.collectLatest { email ->
+                    startDestination = if (!email.isNullOrEmpty()) "home" else "login"
+                    delay(3000) // Mantener splash unos segundos
+                    splashVisible = false
+                    delay(500)
+                    showSplash = false
+                }
             }
 
             Box(modifier = Modifier.fillMaxSize()) {
@@ -52,9 +61,12 @@ class MainActivity : ComponentActivity() {
                     SplashScreen()
                 }
 
-                if (!showSplash) {
-                    // Pasa el ViewModel para que HomeScreen pueda usarlo
-                    NavigationWrapper(stepCounterViewModel, userSessionViewModel)
+                if (!showSplash && startDestination != null) {
+                    NavigationWrapper(
+                        stepCounterViewModel = stepCounterViewModel,
+                        userSessionViewModel = userSessionViewModel,
+                        startDestination = startDestination!!
+                    )
                 }
             }
         }

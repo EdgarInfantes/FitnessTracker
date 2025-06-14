@@ -30,6 +30,12 @@ import androidx.compose.ui.unit.sp
 import dev.einfantesv.fitnesstracker.Screens.util.ActionButton
 import dev.einfantesv.fitnesstracker.Screens.util.Headers
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
+import dev.einfantesv.fitnesstracker.data.remote.dto.LoginRequest
+import dev.einfantesv.fitnesstracker.data.remote.dto.LoginResponse
+import dev.einfantesv.fitnesstracker.network.RetrofitClient
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @Composable
 fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSessionViewModel) {
@@ -40,12 +46,12 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
     var passwordError by remember { mutableStateOf(false) }
 
     // Lista de credenciales válidas (temporales)
-    val validCredentials = listOf(
-        "dirtyyr2012@gmail.com" to "123",
-        "melva.66.2002@gmail.com" to "456",
-        "alxmeza63@gmail.com" to "789",
-        "admin" to "admin"
-    )
+//    val validCredentials = listOf(
+//        "dirtyyr2012@gmail.com" to "123",
+//        "melva.66.2002@gmail.com" to "456",
+//        "alxmeza63@gmail.com" to "789",
+//        "admin" to "admin"
+//    )
 
     Column(
         modifier = Modifier
@@ -142,16 +148,27 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
             passwordError = password.isBlank()
 
             if (!emailError && !passwordError) {
-                if (validCredentials.any { it.first == email && it.second == password }) {
-                    userSessionViewModel.setUserEmail(email)
-                    navController.navigate("home")
-                } else {
-                    emailError = true
-                    passwordError = true
-                }
+                val request = LoginRequest(email, password)
+
+                RetrofitClient.api.login(request).enqueue(object : Callback<LoginResponse> {
+                    override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
+                        if (response.isSuccessful && response.body()?.success == 1) {
+                            userSessionViewModel.setUserEmail(email)
+                            navController.navigate("home")
+                        } else {
+                            emailError = true
+                            passwordError = true
+                        }
+                    }
+
+                    override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
+                        println("Error de red: ${t.message}")
+                        emailError = true
+                        passwordError = true
+                    }
+                })
             }
         }
-
 
         Spacer(modifier = Modifier.height(16.dp))
 

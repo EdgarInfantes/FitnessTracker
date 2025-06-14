@@ -1,4 +1,4 @@
-package dev.einfantesv.fitnesstracker.screens.auth
+package dev.einfantesv.fitnesstracker.Screens.auth
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController

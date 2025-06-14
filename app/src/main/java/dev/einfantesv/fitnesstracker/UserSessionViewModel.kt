@@ -1,29 +1,77 @@
 package dev.einfantesv.fitnesstracker
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import dev.einfantesv.fitnesstracker.Screens.util.Constants.BASE_URL
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.net.HttpURLConnection
+import java.net.URL
 
-class UserSessionViewModel : ViewModel() {
+class UserSessionViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val userPreferences = UserPreferences(application)
+    private val context = application.applicationContext
+
     private val _userEmail = MutableStateFlow<String?>(null)
     val userEmail: StateFlow<String?> = _userEmail
 
+    private val _profileImageUrl = MutableStateFlow("")
+    val profileImageUrl: StateFlow<String> = _profileImageUrl
+
+    // Guarda el correo tanto en memoria como en DataStore
     fun setUserEmail(email: String) {
         _userEmail.value = email
+        viewModelScope.launch {
+            userPreferences.saveUserEmail(email)
+            fetchProfileImage(email)
+        }
     }
 
-    // URL de imagen de perfil basada en el correo
-    val profileImageUrl: StateFlow<String> = userEmail.map { email ->
-        when (email.orEmpty()) {
-            "dirtyyr2012@gmail.com" -> "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fstatic.wikia.nocookie.net%2Fficcion-sin-limites%2Fimages%2F5%2F50%2FJOEL.webp%2Frevision%2Flatest%2Fscale-to-width-down%2F1200%3Fcb%3D20220416041602%26path-prefix%3Des"
-            "melva.66.2002@gmail.com" -> "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fstatic.wikia.nocookie.net%2Falfondohaysitio%2Fimages%2F8%2F8d%2FTeresa_(AFHS10).png%2Frevision%2Flatest%2Fscale-to-width-down%2F1200%3Fcb%3D20230512183136%26path-prefix%3Des"
-            "alxmeza63@gmail.com" -> "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.pinimg.com%2Foriginals%2F76%2Fe7%2F48%2F76e7484504c6ae8efd1a4df5cdd282f5.jpg"
-            "admin" -> "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.pinimg.com%2Foriginals%2F76%2Fe7%2F48%2F76e7484504c6ae8efd1a4df5cdd282f5.jpg"
-            else -> ""
+    // Carga el email guardado en DataStore (usado al inicio)
+    fun loadUserEmailFromDataStore() {
+        viewModelScope.launch {
+            userPreferences.getUserEmail().collect { email ->
+                _userEmail.value = email
+                email?.let { fetchProfileImage(it) }
+            }
         }
-    }.stateIn(viewModelScope, SharingStarted.Companion.Eagerly, "")
+    }
+
+    // Cierra sesión y borra email
+    fun clearUserEmail() {
+        _userEmail.value = null
+        _profileImageUrl.value = ""
+        viewModelScope.launch {
+            userPreferences.clearUserEmail()
+        }
+    }
+
+    private suspend fun fetchProfileImage(email: String) {
+        try {
+            val url = URL("$BASE_URL/api/profile-pic/$email")
+            withContext(Dispatchers.IO) {
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+
+                if (connection.responseCode == 200) {
+                    val response = connection.inputStream.bufferedReader().use { it.readText() }
+
+                    // Parseamos el JSON y extraemos la propiedad "profilePic"
+                    val jsonObject = org.json.JSONObject(response)
+                    val base64Image = jsonObject.optString("profilePic", "")
+
+                    _profileImageUrl.value = base64Image.trim()
+                } else {
+                    _profileImageUrl.value = ""
+                }
+            }
+        } catch (e: Exception) {
+            _profileImageUrl.value = ""
+        }
+    }
 }

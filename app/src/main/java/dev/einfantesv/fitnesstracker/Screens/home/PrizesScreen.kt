@@ -1,4 +1,4 @@
-package dev.einfantesv.fitnesstracker.screens.home
+package dev.einfantesv.fitnesstracker.Screens.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

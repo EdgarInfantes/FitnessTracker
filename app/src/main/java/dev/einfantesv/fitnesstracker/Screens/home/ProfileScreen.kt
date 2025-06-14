@@ -1,4 +1,4 @@
-package dev.einfantesv.fitnesstracker.screens.home
+package dev.einfantesv.fitnesstracker.Screens.home
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -6,18 +6,14 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -32,6 +28,7 @@ import dev.einfantesv.fitnesstracker.Permissions.rememberRequestMediaPermissions
 import dev.einfantesv.fitnesstracker.R
 import dev.einfantesv.fitnesstracker.Screens.util.Headers
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
+import dev.einfantesv.fitnesstracker.Screens.util.asyncImgPerfil
 import java.io.File
 
 @Composable
@@ -83,15 +80,9 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Box(modifier = Modifier.size(130.dp)) {
-            AsyncImage(
-                model = profileImageUri ?: profileImageUrl,
-                contentDescription = "Foto de perfil",
-                modifier = Modifier
-                    .size(130.dp)
-                    .clip(CircleShape)
-                    .background(Color.White)
-                    .border(2.dp, Color.Black, CircleShape),
-                contentScale = ContentScale.Crop
+            asyncImgPerfil(
+                profileImageBase64 = if (profileImageUri == null) profileImageUrl else "",
+                size = 130
             )
 
             IconButton(
@@ -113,6 +104,12 @@ fun ProfileScreen(
         ProfileOptionButton("Cambiar nombre") {}
         ProfileOptionButton("Cambiar contraseña") {}
         ProfileOptionButton("Cambiar correo") {}
+        ProfileOptionButton("Cerrar sesión", R.drawable.baseline_logout_24, Color.Red) {
+            userSessionViewModel.clearUserEmail()
+            navController.navigate("login") {
+                popUpTo(0) // Limpia el backstack
+            }
+        }
         Spacer(modifier = Modifier.height(8.dp))
 
         Row(
@@ -203,7 +200,12 @@ fun saveBitmapToCache(context: Context, bitmap: Bitmap): Uri {
 
 //Funcion para opciones de edicion del perfil
 @Composable
-fun ProfileOptionButton(text: String, onClick: () -> Unit) {
+fun ProfileOptionButton(
+    text: String,
+    iconResId: Int? = null,
+    textColor: Color = Color.Black,
+    onClick: () -> Unit
+) {
     TextButton(
         onClick = onClick,
         modifier = Modifier
@@ -212,7 +214,7 @@ fun ProfileOptionButton(text: String, onClick: () -> Unit) {
             .height(70.dp),
         colors = ButtonDefaults.textButtonColors(
             containerColor = Color.Transparent,
-            contentColor = Color.Black
+            contentColor = textColor
         )
     ) {
         Row(
@@ -220,14 +222,23 @@ fun ProfileOptionButton(text: String, onClick: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text,
-                style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp)
-            )
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Ir"
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 18.sp,
+                        color = textColor
+                    )
+                )
+            }
+            iconResId?.let {
+                Icon(
+                    painter = painterResource(id = it),
+                    contentDescription = null,
+                    tint = textColor,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+            }
         }
     }
 }
