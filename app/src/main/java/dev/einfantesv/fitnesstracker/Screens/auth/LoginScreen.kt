@@ -1,5 +1,6 @@
 package dev.einfantesv.fitnesstracker.Screens.auth
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -9,33 +10,36 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
-import dev.einfantesv.fitnesstracker.R
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import dev.einfantesv.fitnesstracker.Screens.util.ActionButton
-import dev.einfantesv.fitnesstracker.Screens.util.Headers
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
-import dev.einfantesv.fitnesstracker.data.remote.dto.LoginRequest
-import dev.einfantesv.fitnesstracker.data.remote.dto.LoginResponse
-import dev.einfantesv.fitnesstracker.network.RetrofitClient
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseAuthManager
+import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseAuthManager.loginUser
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import androidx.compose.ui.res.painterResource
+import dev.einfantesv.fitnesstracker.R
+import dev.einfantesv.fitnesstracker.Screens.util.AnimatedSnackbar
+import dev.einfantesv.fitnesstracker.Screens.util.Headers
+import kotlinx.coroutines.delay
 
 @Composable
 fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSessionViewModel) {
@@ -44,14 +48,12 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
     var showPassword by remember { mutableStateOf(false) }
     var emailError by remember { mutableStateOf(false) }
     var passwordError by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    var snackbarVisible by remember { mutableStateOf(false) }
+    var snackbarMessage by remember { mutableStateOf("") }
+    var snackbarColor by remember { mutableStateOf(Color.Green) }
 
-    // Lista de credenciales válidas (temporales)
-//    val validCredentials = listOf(
-//        "dirtyyr2012@gmail.com" to "123",
-//        "melva.66.2002@gmail.com" to "456",
-//        "alxmeza63@gmail.com" to "789",
-//        "admin" to "admin"
-//    )
 
     Column(
         modifier = Modifier
@@ -143,32 +145,28 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        ActionButton(label = "Iniciar sesión") {
-            emailError = email.isBlank()
-            passwordError = password.isBlank()
-
-            if (!emailError && !passwordError) {
-                val request = LoginRequest(email, password)
-
-                RetrofitClient.api.login(request).enqueue(object : Callback<LoginResponse> {
-                    override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-                        if (response.isSuccessful && response.body()?.success == 1) {
-                            userSessionViewModel.setUserEmail(email)
-                            navController.navigate("home")
-                        } else {
-                            emailError = true
-                            passwordError = true
+        ActionButton(
+            label = if (loading) "Iniciando sesión..." else "Iniciar sesión",
+            onClick = {
+                loading = true
+                CoroutineScope(Dispatchers.Main).launch {
+                    val result = FirebaseAuthManager.loginUser(email, password)
+                    if (result.isSuccess) {
+                        snackbarMessage = "Bienvenido"
+                        snackbarColor = Color(0xFF4CAF50) // verde
+                        userSessionViewModel.loadUserData()
+                        navController.navigate("home") {
+                            popUpTo(0)
                         }
+                    }else{
+                        loading = false
+                        snackbarMessage = "Datos incorrectos"
+                        snackbarColor = Color(0xFFF44336)
                     }
-
-                    override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
-                        println("Error de red: ${t.message}")
-                        emailError = true
-                        passwordError = true
-                    }
-                })
+                    snackbarVisible = true
+                }
             }
-        }
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -216,6 +214,20 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
                     color = Color(0xFF000000),
                     style = MaterialTheme.typography.bodyMedium
                 )
+            }
+        }
+        // Usamos el SnackBar
+        AnimatedSnackbar(
+            visible = snackbarVisible,
+            message = snackbarMessage,
+            backgroundColor = snackbarColor
+        )
+
+        //Cerramos el SnackBar
+        LaunchedEffect(snackbarVisible) {
+            if (snackbarVisible) {
+                delay(3000)
+                snackbarVisible = false
             }
         }
     }

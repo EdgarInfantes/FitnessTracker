@@ -1,5 +1,11 @@
 package dev.einfantesv.fitnesstracker.Screens.util
 
+import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.Button
@@ -35,6 +42,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import dev.einfantesv.fitnesstracker.R
 
 @Composable
@@ -111,24 +119,24 @@ fun textDescripResetPass(label: String){
 }
 
 @Composable
-fun asyncImgPerfil(profileImageBase64: String, size: Int) {
-    val imageBitmap = remember(profileImageBase64) {
-        try {
-            if (profileImageBase64.isNotBlank()) {
-                val imageBytes = android.util.Base64.decode(profileImageBase64, android.util.Base64.DEFAULT)
-                val bitmap = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-                bitmap?.asImageBitmap()
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            null
-        }
+fun asyncImgPerfil(
+    profileImageUrl: String?,
+    profileImageUri: Uri?,
+    selectedAvatarUrl: String? = null,
+    size: Int,
+    shouldDeleteAvatar: Boolean = false
+) {
+    val imageModel: Any? = when {
+        shouldDeleteAvatar -> null
+        profileImageUri != null -> profileImageUri
+        !selectedAvatarUrl.isNullOrBlank() -> selectedAvatarUrl
+        !profileImageUrl.isNullOrBlank() && profileImageUrl.startsWith("http") -> profileImageUrl
+        else -> null
     }
 
-    if (imageBitmap != null) {
-        Image(
-            bitmap = imageBitmap,
+    if (imageModel != null) {
+        AsyncImage(
+            model = imageModel,
             contentDescription = "Imagen de perfil",
             modifier = Modifier
                 .size(size.dp)
@@ -141,11 +149,48 @@ fun asyncImgPerfil(profileImageBase64: String, size: Int) {
         Icon(
             imageVector = Icons.Filled.AccountCircle,
             contentDescription = "Imagen por defecto",
-            modifier = Modifier.size(size.dp),
+            modifier = Modifier
+                .size(size.dp)
+                .clip(CircleShape),
             tint = Color.Gray
         )
     }
 }
+
+@Composable
+fun AnimatedSnackbar(
+    visible: Boolean,
+    message: String,
+    backgroundColor: Color
+)
+{
+    AnimatedVisibility(
+        visible = visible,
+        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 24.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(backgroundColor)
+                .padding(vertical = 12.dp, horizontal = 20.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = message,
+                color = Color.White,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+
+}
+
+
+
 
 @Composable
 fun Headers(
