@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
+import com.google.firebase.auth.FirebaseAuth
 import dev.einfantesv.fitnesstracker.Navigation.NavigationWrapper
 import dev.einfantesv.fitnesstracker.Screens.util.SplashScreen
 import kotlinx.coroutines.delay
@@ -33,47 +34,38 @@ class MainActivity : ComponentActivity() {
         )[UserSessionViewModel::class.java]
 
         setContent {
-            var showSplash by remember { mutableStateOf(true) }
-            var splashVisible by remember { mutableStateOf(true) }
-            var startDestination by remember { mutableStateOf<String?>(null) }
-
-            // Cargar el correo desde DataStore
-            LaunchedEffect(Unit) {
-                userSessionViewModel.loadUserEmailFromDataStore()
-                userSessionViewModel.userEmail.collectLatest { email ->
-                    startDestination = if (!email.isNullOrEmpty()) "home" else "login"
-                    delay(3000) // Mantener splash unos segundos
-                    splashVisible = false
-                    delay(500)
-                    showSplash = false
-                }
-            }
-
-            Box(modifier = Modifier.fillMaxSize()) {
-                AnimatedVisibility(
-                    visible = splashVisible,
-                    exit = slideOutVertically(
-                        targetOffsetY = { -it },
-                        animationSpec = tween(durationMillis = 500)
-                    ),
-                    enter = fadeIn()
-                ) {
-                    SplashScreen()
-                }
-
-                if (!showSplash && startDestination != null) {
-                    NavigationWrapper(
-                        stepCounterViewModel = stepCounterViewModel,
-                        userSessionViewModel = userSessionViewModel,
-                        startDestination = startDestination!!
-                    )
-                }
-            }
+            MainAppContent(stepCounterViewModel, userSessionViewModel)
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        stepCounterViewModel.stopListening() // Puedes decidir si parar aquí o dentro de HomeScreen
+        stepCounterViewModel.stopListening()
+    }
+}
+
+@Composable
+fun MainAppContent(
+    stepCounterViewModel: StepCounterViewModel,
+    userSessionViewModel: UserSessionViewModel
+) {
+    var showSplash by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        delay(1500) // Duración del splash: 1.5 segundos
+        showSplash = false
+    }
+
+    if (showSplash) {
+        SplashScreen()
+    } else {
+        val isUserLoggedIn = FirebaseAuth.getInstance().currentUser != null
+        val startDestination = if (isUserLoggedIn) "home" else "login"
+
+        NavigationWrapper(
+            stepCounterViewModel = stepCounterViewModel,
+            userSessionViewModel = userSessionViewModel,
+            startDestination = startDestination
+        )
     }
 }

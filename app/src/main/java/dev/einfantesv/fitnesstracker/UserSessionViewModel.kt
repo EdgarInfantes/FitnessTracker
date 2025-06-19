@@ -1,77 +1,117 @@
 package dev.einfantesv.fitnesstracker
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.einfantesv.fitnesstracker.Screens.util.Constants.BASE_URL
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.URL
 
-class UserSessionViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val userPreferences = UserPreferences(application)
-    private val context = application.applicationContext
 
-    private val _userEmail = MutableStateFlow<String?>(null)
-    val userEmail: StateFlow<String?> = _userEmail
+class UserSessionViewModel : ViewModel() {
 
-    private val _profileImageUrl = MutableStateFlow("")
-    val profileImageUrl: StateFlow<String> = _profileImageUrl
+    private val auth = FirebaseAuth.getInstance()
+    private val firestore = FirebaseFirestore.getInstance()
 
-    // Guarda el correo tanto en memoria como en DataStore
-    fun setUserEmail(email: String) {
-        _userEmail.value = email
-        viewModelScope.launch {
-            userPreferences.saveUserEmail(email)
-            fetchProfileImage(email)
-        }
+    private val _userUid = MutableStateFlow<String?>(auth.currentUser?.uid)
+    val userUid: StateFlow<String?> = _userUid
+
+    private val _userData = MutableStateFlow<UserModel?>(null)
+    val userData: StateFlow<UserModel?> = _userData
+
+    val profileImageUrl: StateFlow<String?> = userData
+        .map { it?.profileImageUrl }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+
+
+    init {
+        observeUidChanges()
     }
 
-    // Carga el email guardado en DataStore (usado al inicio)
-    fun loadUserEmailFromDataStore() {
+    private fun observeUidChanges() {
         viewModelScope.launch {
-            userPreferences.getUserEmail().collect { email ->
-                _userEmail.value = email
-                email?.let { fetchProfileImage(it) }
-            }
-        }
-    }
-
-    // Cierra sesión y borra email
-    fun clearUserEmail() {
-        _userEmail.value = null
-        _profileImageUrl.value = ""
-        viewModelScope.launch {
-            userPreferences.clearUserEmail()
-        }
-    }
-
-    private suspend fun fetchProfileImage(email: String) {
-        try {
-            val url = URL("$BASE_URL/api/profile-pic/$email")
-            withContext(Dispatchers.IO) {
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-
-                if (connection.responseCode == 200) {
-                    val response = connection.inputStream.bufferedReader().use { it.readText() }
-
-                    // Parseamos el JSON y extraemos la propiedad "profilePic"
-                    val jsonObject = org.json.JSONObject(response)
-                    val base64Image = jsonObject.optString("profilePic", "")
-
-                    _profileImageUrl.value = base64Image.trim()
+            userUid.collect { uid ->
+                if (uid != null) {
+                    loadUserData(uid)
                 } else {
-                    _profileImageUrl.value = ""
+                    _userData.value = null
                 }
             }
-        } catch (e: Exception) {
-            _profileImageUrl.value = ""
         }
     }
+
+    fun isUserLoggedIn(): Boolean = auth.currentUser != null
+
+    fun getCurrentUserUid(): String? = auth.currentUser?.uid
+
+    fun refreshUserData(uid: String? = getCurrentUserUid()) {
+        val safeUid = uid ?: return
+
+        firestore.collection("User").document(safeUid).get()
+            .addOnSuccessListener { snapshot ->
+                if (snapshot.exists()) {
+                    _userData.value = snapshot.toObject(UserModel::class.java)
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.e("UserSessionViewModel", "Error al refrescar datos del usuario", exception)
+            }
+    }
+
+
+
+    fun signOut() {
+        auth.signOut()
+        _userUid.value = null
+        _userData.value = null
+    }
+
+    fun loadUserData(uid: String? = auth.currentUser?.uid) {
+        uid?.let {
+            firestore.collection("User").document(it)
+                .get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        val user = document.toObject(UserModel::class.java)
+                        println("Usuario cargado: $user")  // 👈 verifica en logcat
+                        _userData.value = user
+                    } else {
+                        println("Documento no existe.")
+                    }
+                }
+                .addOnFailureListener {
+                    println("Error al cargar datos: ${it.message}")
+                    _userData.value = null
+                }
+        }
+    }
+
+
+
 }
+
+
+data class UserModel(
+    val uid: String = "",
+    val name: String = "",
+    val lastname: String = "",
+    val email: String = "",
+    val UserFriendCode: String = "",
+    val RegisterDate: String = "",
+    val private_account: Boolean = false,
+    val profileImageUrl: String = ""
+)

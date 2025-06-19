@@ -25,6 +25,6 @@ fun PrizesScreen(navController: NavHostController) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ){
-        Text(text = "Pantalla de Perfil")
+        Text(text = "Pantalla de Premios")
     }
 }

@@ -1,5 +1,6 @@
 package dev.einfantesv.fitnesstracker.Screens.auth
 
+import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.compose.foundation.layout.*
@@ -14,11 +15,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.einfantesv.fitnesstracker.Screens.util.ActionButton
 import dev.einfantesv.fitnesstracker.Screens.util.Headers
+import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseAuthManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
 
 @Composable
 fun RegisterScreen(navController: NavHostController) {
@@ -29,6 +36,7 @@ fun RegisterScreen(navController: NavHostController) {
     var confirmPassword by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var showConfirmPassword by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -119,7 +127,16 @@ fun RegisterScreen(navController: NavHostController) {
         ActionButton(
             label = "Registrarse",
             onClick = {
-                navController.navigate("login")
+                CoroutineScope(Dispatchers.Main).launch {
+                    val result = FirebaseAuthManager.registerUser(nombre, apellido, email, password)
+                    if (result.isSuccess){
+                        navController.navigate("login")
+                    }else{
+                        val error = result.exceptionOrNull()?.message?: "Error desconocido"
+                        Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                    }
+                }
+
             }
         )
 

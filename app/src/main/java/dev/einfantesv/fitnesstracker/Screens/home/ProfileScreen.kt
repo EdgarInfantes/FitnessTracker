@@ -1,7 +1,5 @@
 package dev.einfantesv.fitnesstracker.Screens.home
 
-import android.content.Context
-import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,16 +18,43 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.FileProvider
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import dev.einfantesv.fitnesstracker.Permissions.rememberRequestCameraPermission
 import dev.einfantesv.fitnesstracker.Permissions.rememberRequestMediaPermissions
 import dev.einfantesv.fitnesstracker.R
 import dev.einfantesv.fitnesstracker.Screens.util.Headers
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
 import dev.einfantesv.fitnesstracker.Screens.util.asyncImgPerfil
-import java.io.File
+import android.widget.Toast
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.draw.clip
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import dev.einfantesv.fitnesstracker.Screens.util.ActionButton
+import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseAuthManager.uploadProfileImage
+import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseGetDataManager
+import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseUserManager
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.unit.dp
+import dev.einfantesv.fitnesstracker.Screens.util.AnimatedSnackbar
+import kotlinx.coroutines.delay
+
 
 @Composable
 fun ProfileScreen(
@@ -42,6 +67,16 @@ fun ProfileScreen(
     var profileImageUri by remember { mutableStateOf<Uri?>(null) }
     var isPrivate by remember { mutableStateOf(false) }
     val profileImageUrl by userSessionViewModel.profileImageUrl.collectAsState()
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedAvatarUrl by remember { mutableStateOf<String?>(null) }
+    var showAvatarPicker by remember { mutableStateOf(false) }
+    val uid = FirebaseAuth.getInstance().currentUser?.uid
+    var shouldDeleteAvatar by remember { mutableStateOf(false) }
+    var snackbarVisible by remember { mutableStateOf(false) }
+    var snackbarMessage by remember { mutableStateOf("") }
+    var snackbarColor by remember { mutableStateOf(Color.Green) }
+
+
 
     val pickImageLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -49,21 +84,9 @@ fun ProfileScreen(
         uri?.let { profileImageUri = it }
     }
 
-    val takePictureLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap ->
-        bitmap?.let {
-            val uri = saveBitmapToCache(context, it)
-            profileImageUri = uri
-        }
-    }
 
     val requestGalleryPermission = rememberRequestMediaPermissions { granted ->
         if (granted) pickImageLauncher.launch("image/*")
-    }
-
-    val requestCameraPermission = rememberRequestCameraPermission { granted ->
-        if (granted) takePictureLauncher.launch(null)
     }
 
     Column(
@@ -80,10 +103,16 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Box(modifier = Modifier.size(130.dp)) {
+
             asyncImgPerfil(
-                profileImageBase64 = if (profileImageUri == null) profileImageUrl else "",
+                profileImageUrl = profileImageUrl,
+                profileImageUri = profileImageUri,
+                selectedAvatarUrl = selectedAvatarUrl,
+                shouldDeleteAvatar = shouldDeleteAvatar,
                 size = 130
             )
+
+
 
             IconButton(
                 onClick = { showImageOptions = true },
@@ -105,7 +134,7 @@ fun ProfileScreen(
         ProfileOptionButton("Cambiar contraseña") {}
         ProfileOptionButton("Cambiar correo") {}
         ProfileOptionButton("Cerrar sesión", R.drawable.baseline_logout_24, Color.Red) {
-            userSessionViewModel.clearUserEmail()
+            userSessionViewModel.signOut()
             navController.navigate("login") {
                 popUpTo(0) // Limpia el backstack
             }
@@ -126,56 +155,123 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         //Boton para confirmar los cambios
-        Button(
-            onClick = { /* Confirmar acci\u00f3n */ },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .padding(horizontal = 8.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7948DB))
-        ) {
-            Text("Confirmar", color = Color.White, fontSize = 18.sp)
+        ActionButton(label = "Confirmar") {
+            if (uid == null) return@ActionButton
+
+            when {
+                selectedImageUri != null -> {
+                    uploadProfileImage(context, selectedImageUri!!) { success ->
+                        if (success) {
+                            Toast.makeText(context, "Imagen subida", Toast.LENGTH_SHORT).show()
+                            userSessionViewModel.loadUserData()
+                        } else {
+                            Toast.makeText(context, "Error al subir imagen", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+
+                selectedAvatarUrl != null -> {
+                    FirebaseUserManager.updateProfileImageUrl(uid, selectedAvatarUrl!!) { success ->
+                        if (success) {
+                            snackbarMessage = "Cambios guardados correctamente"
+                            snackbarColor = Color(0xFF4CAF50) // verde
+                            userSessionViewModel.loadUserData()
+                        } else {
+                            snackbarMessage = "Error al guardar cambios"
+                            snackbarColor = Color(0xFFF44336)
+                        }
+                        snackbarVisible = true
+
+                    }
+
+                }
+
+                shouldDeleteAvatar -> {
+                    FirebaseUserManager.deleteAvatar(uid) { success ->
+                        if (success) {
+                            snackbarMessage = "Cambios guardados correctamente"
+                            snackbarColor = Color(0xFF4CAF50) // verde
+                            userSessionViewModel.loadUserData()
+                        } else {
+                            snackbarMessage = "Error al guardar cambios"
+                            snackbarColor = Color(0xFFF44336)
+                        }
+                        snackbarVisible = true
+                    }
+                }
+
+
+            }
+
+            // Resetear estado temporal
+            selectedAvatarUrl = null
+            selectedImageUri = null
+            shouldDeleteAvatar = false
         }
         Spacer(modifier = Modifier.height(32.dp))
+
+        // Usamos el SnackBar
+        AnimatedSnackbar(
+            visible = snackbarVisible,
+            message = snackbarMessage,
+            backgroundColor = snackbarColor
+        )
+
+        //Cerramos el SnackBar
+        LaunchedEffect(snackbarVisible) {
+            if (snackbarVisible) {
+                delay(2000)
+                snackbarVisible = false
+            }
+        }
+
     }
 
     //Opciones para editar la foto de perfil
     if (showImageOptions) {
         AlertDialog(
             onDismissRequest = { showImageOptions = false },
-            title = { Text("Edit") },
+            title = { Text("Editar foto") },
             text = {
                 Column {
                     TextButton(onClick = {
                         showImageOptions = false
                         showFullScreen = true
-                    }) { Text("Ver foto") }
+                    }) { Text("Ver Avatar") }
 
                     TextButton(onClick = {
-                        requestCameraPermission()
                         showImageOptions = false
-                    }) { Text("Tomar foto") }
+                        showAvatarPicker = true
+                    }) { Text("Cambiar Avatar") }
 
-                    TextButton(onClick = {
-                        requestGalleryPermission()
-                        showImageOptions = false
-                    }) { Text("Elegir desde galería") }
+                    TextButton(
+                        onClick = {
+                            selectedAvatarUrl = null
+                            profileImageUri = null
+                            shouldDeleteAvatar = true
+                            showImageOptions = false
+                        }
+                    ) {
+                        Text("Eliminar avatar", color = Color.Red)
+                    }
+
                 }
             },
             confirmButton = {},
             dismissButton = {}
         )
     }
-
-    // Muestra la foto de perfil (Opcion Ver Foto)
-    if (showFullScreen && (profileImageUri != null || profileImageUrl != null)) {
+    //Ver Avatar
+    if (showFullScreen && (profileImageUri != null || profileImageUrl != null || selectedAvatarUrl != null)) {
         AlertDialog(
             onDismissRequest = { showFullScreen = false },
             text = {
                 AsyncImage(
-                    model = profileImageUri ?: profileImageUrl,
+                    model = selectedAvatarUrl ?: profileImageUri ?: profileImageUrl,
                     contentDescription = "Foto de perfil",
-                    modifier = Modifier.fillMaxWidth().aspectRatio(1f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f),
                     contentScale = ContentScale.Crop
                 )
             },
@@ -183,20 +279,29 @@ fun ProfileScreen(
             dismissButton = {}
         )
     }
+
+    // Muestra la foto de perfil (Opcion Ver Foto)
+    if (showAvatarPicker) {
+        AlertDialog(
+            onDismissRequest = { showAvatarPicker = false },
+            title = { Text("Selecciona un avatar") },
+            text = {
+                AvatarPicker(
+                    selectedAvatarUrl = selectedAvatarUrl,
+                    onAvatarSelected = { url ->
+                        selectedAvatarUrl = url
+                        profileImageUri = null
+                        showAvatarPicker = false
+                    }
+                )
+            },
+            confirmButton = {},
+            dismissButton = {}
+        )
+    }
+
 }
 
-//Funcion para guardar la foto localmente
-fun saveBitmapToCache(context: Context, bitmap: Bitmap): Uri {
-    val file = File(context.cacheDir, "profile_photo.png")
-    file.outputStream().use {
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
-    }
-    return FileProvider.getUriForFile(
-        context,
-        "${context.packageName}.fileprovider",
-        file
-    )
-}
 
 //Funcion para opciones de edicion del perfil
 @Composable
@@ -242,3 +347,51 @@ fun ProfileOptionButton(
         }
     }
 }
+
+@Composable
+fun AvatarPicker(
+    selectedAvatarUrl: String?,
+    onAvatarSelected: (String) -> Unit
+) {
+    val avatarUrls = remember { mutableStateListOf<String>() }
+
+    LaunchedEffect(Unit) {
+        FirebaseGetDataManager.getAvatarUrls { urls ->
+            avatarUrls.clear()
+            avatarUrls.addAll(urls)
+        }
+    }
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        items(avatarUrls) { url ->
+            val isSelected = url == selectedAvatarUrl
+
+            Box(
+                modifier = Modifier
+                    .size(90.dp)
+                    .border(
+                        width = if (isSelected) 4.dp else 2.dp,
+                        color = if (isSelected) Color(0xFF7948DB) else Color.LightGray,
+                        shape = CircleShape
+                    )
+                    .clip(CircleShape)
+                    .clickable { onAvatarSelected(url) }
+            ) {
+                AsyncImage(
+                    model = url,
+                    contentDescription = "Avatar",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+    }
+}
+
+
+

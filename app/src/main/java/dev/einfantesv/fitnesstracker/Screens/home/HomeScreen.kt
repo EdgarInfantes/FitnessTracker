@@ -1,5 +1,6 @@
 package dev.einfantesv.fitnesstracker.Screens.home
 
+import android.net.Uri
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -18,7 +19,10 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -34,11 +38,13 @@ fun HomeScreen(
     stepCounterViewModel: StepCounterViewModel,
     userSessionViewModel: UserSessionViewModel
 ) {
-    val email by userSessionViewModel.userEmail.collectAsState(initial = null)
-    val profileImageUrl by userSessionViewModel.profileImageUrl.collectAsState()
+
+    val userData by userSessionViewModel.userData.collectAsState()
     var hasPermission by remember { mutableStateOf(false) }
-    //var elapsedMinutes by remember { mutableStateOf(0) } Banco
     val elapsedMinutes by stepCounterViewModel.elapsedMinutes
+    val username = userData?.name ?: "Usuario"
+    val profile = userData?.profileImageUrl
+
 
     // Solicitud de permiso reutilizable
     val requestPermission = rememberRequestActivityRecognitionPermission { granted ->
@@ -86,45 +92,87 @@ fun HomeScreen(
         return (steps * 0.04).toInt()
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp)
+            .imePadding(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+
+        Spacer(modifier = Modifier.height(25.dp))
+        //Texto de Hola Usuario
+
+
+        HomeHeader(
+            username = username,
+            profileImageUrl = profile,
+            profileImageUri = null
+        )
+
+
+        // Circulo de contar pasos
+        if (hasPermission) {
+            StepCircle(
+                permissionGranted = true,
+                stepCount = stepCounterViewModel.stepCount.value,
+                elapsedTime = formatElapsedTime(elapsedMinutes),
+                calories = calculateCalories(stepCounterViewModel.stepCount.value),
+                distance = 0
+            )
+        } else {
+            StepCircle(
+                permissionGranted = false,
+                stepCount = 0,
+                elapsedTime = formatElapsedTime(elapsedMinutes),
+                calories = 0,
+                distance = 0
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = { requestPermission() }) {
+                Text(text = "Activar permiso")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(50.dp))
+
+
+    }
+}
+
+@Composable
+fun HomeHeader(username: String = "Edgar", profileImageUrl: String?, profileImageUri: Uri?) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Texto combinado
+        Text(
+            text = buildAnnotatedString {
+                withStyle(style = SpanStyle(color = Color.Black)) { append("Hola, ") }
+                withStyle(style = SpanStyle(color = Color(0xFF7948DB))) { append(username) }
+            },
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 28.sp),
+            fontWeight = FontWeight.Bold
+        )
+
         // Imagen de perfil
         Box(
             modifier = Modifier
-                .size(80.dp)
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
+                .size(64.dp)
+                .padding(8.dp)
         ) {
-            asyncImgPerfil(profileImageUrl, 80)
-        }
+            asyncImgPerfil(
+                profileImageUrl = profileImageUrl,
+                profileImageUri = null,
+                selectedAvatarUrl = null,
+                size = 64
+            )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            if (hasPermission) {
-                StepCircle(
-                    permissionGranted = true,
-                    stepCount = stepCounterViewModel.stepCount.value,
-                    elapsedTime = formatElapsedTime(elapsedMinutes),
-                    calories = calculateCalories(stepCounterViewModel.stepCount.value),
-                    distance = 0
-                )
-            } else {
-                StepCircle(
-                    permissionGranted = false,
-                    stepCount = 0,
-                    elapsedTime = formatElapsedTime(elapsedMinutes),
-                    calories = 0,
-                    distance = 0
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { requestPermission() }) {
-                    Text(text = "Activar permiso")
-                }
-            }
         }
     }
 }
