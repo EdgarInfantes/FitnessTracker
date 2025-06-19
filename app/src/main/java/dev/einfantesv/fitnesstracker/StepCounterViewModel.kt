@@ -6,58 +6,26 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.compose.runtime.State
+import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseGetDataManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
-/*
 class StepCounterViewModel(application: Application) : AndroidViewModel(application), SensorEventListener {
 
     private val sensorManager = application.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val stepDetectorSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
+    private val _weeklySteps = mutableStateOf<List<Float>>(emptyList())
+    val weeklySteps: State<List<Float>> = _weeklySteps
 
-    val stepCount: MutableState<Int> = mutableStateOf(0)
-    private var isListening = false
-
-    fun startListening() {
-        if (!isListening) {
-            stepDetectorSensor?.let {
-                sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_FASTEST) //cambiar normal a fastest
-                isListening = true
-            }
-        }
-    }
-
-
-    fun stopListening() {
-        if (isListening) {
-            sensorManager.unregisterListener(this)
-            isListening = false
-        }
-    }
-
-    override fun onSensorChanged(event: SensorEvent) {
-        if (event.sensor.type == Sensor.TYPE_STEP_DETECTOR) {
-            // Actualizar contador en el hilo principal para seguridad
-            val steps = event.values[0].toInt()
-            if (steps > 0) {
-                // Asegurarse que se incremente rápido y sin delay
-                stepCount.value += steps
-            }
-        }
-    }
-
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
-}
-
- */
-class StepCounterViewModel(application: Application) : AndroidViewModel(application), SensorEventListener {
-
-    private val sensorManager = application.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    private val stepDetectorSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
+    private val _weeklyLabels = mutableStateOf<List<String>>(emptyList())
+    val weeklyLabels: State<List<String>> = _weeklyLabels
 
     val calories: MutableState<Int> = mutableStateOf(0)
     val stepCount: MutableState<Int> = mutableStateOf(0)
@@ -124,5 +92,29 @@ class StepCounterViewModel(application: Application) : AndroidViewModel(applicat
             }
         }
     }
+
+    data class StepDataResult(
+        val steps: List<Float>,
+        val labels: List<String>
+    )
+
+
+    fun loadWeeklySteps(uid: String) {
+        FirebaseGetDataManager.getStepsLast7Days(uid) { result ->
+            _weeklySteps.value = result.steps
+            _weeklyLabels.value = result.labels
+        }
+    }
+
+    fun loadMonthlySteps(uid: String) {
+        FirebaseGetDataManager.getStepsLast7Months(uid) { steps, labels ->
+            _weeklySteps.value = steps
+            _weeklyLabels.value = labels
+            Log.d("DEBUG_MONTH", "Steps: $steps")
+            Log.d("DEBUG_MONTH", "Labels: $labels")
+        }
+    }
+
+
 
 }
