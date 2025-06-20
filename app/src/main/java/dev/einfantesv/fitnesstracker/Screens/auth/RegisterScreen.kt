@@ -18,14 +18,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import dev.einfantesv.fitnesstracker.Screens.util.ActionButton
 import dev.einfantesv.fitnesstracker.Screens.util.Headers
 import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseAuthManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-
 
 @Composable
 fun RegisterScreen(navController: NavHostController) {
@@ -123,10 +121,29 @@ fun RegisterScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Botón Registrarse
+        // Botón hacia elección de meta de pasos diarios
         ActionButton(
-            label = "Registrarse",
+            label = "Continuar",
             onClick = {
+
+                if (nombre.isBlank() || apellido.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
+                    Toast.makeText(context, "Completa todos los campos", Toast.LENGTH_SHORT).show()
+                    return@ActionButton
+                }
+
+                if (password != confirmPassword) {
+                    Toast.makeText(context, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show()
+                    return@ActionButton
+                }
+
+                navController.currentBackStackEntry?.savedStateHandle?.apply {
+                    set("nombre", nombre)
+                    set("apellido", apellido)
+                    set("email", email)
+                    set("password", password)
+                }
+                navController.navigate("dailySteps")
+
                 CoroutineScope(Dispatchers.Main).launch {
                     val result = FirebaseAuthManager.registerUser(nombre, apellido, email, password)
                     if (result.isSuccess){
@@ -136,7 +153,6 @@ fun RegisterScreen(navController: NavHostController) {
                         Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                     }
                 }
-
             }
         )
 

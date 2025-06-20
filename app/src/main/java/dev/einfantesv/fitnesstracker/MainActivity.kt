@@ -3,17 +3,19 @@ package dev.einfantesv.fitnesstracker
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.firebase.auth.FirebaseAuth
 import dev.einfantesv.fitnesstracker.Navigation.NavigationWrapper
 import dev.einfantesv.fitnesstracker.Screens.util.SplashScreen
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 
 class MainActivity : ComponentActivity() {
 
@@ -33,6 +35,7 @@ class MainActivity : ComponentActivity() {
             ViewModelProvider.AndroidViewModelFactory.getInstance(application)
         )[UserSessionViewModel::class.java]
 
+        WindowCompat.setDecorFitsSystemWindows(window, true)
         setContent {
             MainAppContent(stepCounterViewModel, userSessionViewModel)
         }
@@ -49,6 +52,15 @@ fun MainAppContent(
     stepCounterViewModel: StepCounterViewModel,
     userSessionViewModel: UserSessionViewModel
 ) {
+    val systemUiController = rememberSystemUiController()
+
+    // Fondo claro → íconos oscuros
+    SideEffect {
+        systemUiController.setSystemBarsColor(
+            color = Color.White,
+            darkIcons = true // <- Esto es clave para que los íconos se vean NEGROS
+        )
+    }
     var showSplash by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
@@ -61,6 +73,18 @@ fun MainAppContent(
     } else {
         val isUserLoggedIn = FirebaseAuth.getInstance().currentUser != null
         val startDestination = if (isUserLoggedIn) "home" else "login"
+
+
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .systemBarsPadding()
+        ) {
+            NavigationWrapper(
+                stepCounterViewModel = stepCounterViewModel,
+                userSessionViewModel = userSessionViewModel,
+                startDestination = startDestination
+            )
+        }
 
         NavigationWrapper(
             stepCounterViewModel = stepCounterViewModel,
