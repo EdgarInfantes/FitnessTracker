@@ -36,6 +36,7 @@ class MainActivity : ComponentActivity() {
         )[UserSessionViewModel::class.java]
 
         WindowCompat.setDecorFitsSystemWindows(window, true)
+
         setContent {
             MainAppContent(stepCounterViewModel, userSessionViewModel)
         }
@@ -54,37 +55,46 @@ fun MainAppContent(
 ) {
     val systemUiController = rememberSystemUiController()
 
-    // Fondo claro → íconos oscuros
     SideEffect {
         systemUiController.setSystemBarsColor(
             color = Color.White,
-            darkIcons = true // <- Esto es clave para que los íconos se vean NEGROS
+            darkIcons = true
         )
     }
-    var showSplash by remember { mutableStateOf(true) }
 
+    var showSplash by remember { mutableStateOf(true) }
+    var startDestination by remember { mutableStateOf<String?>(null) }
+
+    // Mostrar Splash al iniciar
     LaunchedEffect(Unit) {
-        delay(1500) // Duración del splash: 1.5 segundos
+        delay(1500) // Splash de 1.5 segundos
         showSplash = false
     }
 
-    if (showSplash) {
-        SplashScreen()
-    } else {
-        val isUserLoggedIn = FirebaseAuth.getInstance().currentUser != null
-        val startDestination = if (isUserLoggedIn) "home" else "login"
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .systemBarsPadding()
-        ) {
-            NavigationWrapper(
-                stepCounterViewModel = stepCounterViewModel,
-                userSessionViewModel = userSessionViewModel,
-                startDestination = startDestination
-            )
+    // Esperar a que FirebaseAuth se actualice antes de decidir la pantalla inicial
+    LaunchedEffect(showSplash) {
+        if (!showSplash) {
+            delay(300) // Espera corta para garantizar que FirebaseAuth.currentUser no sea null si ya está logueado
+            val isUserLoggedIn = FirebaseAuth.getInstance().currentUser != null
+            startDestination = if (isUserLoggedIn) "home" else "login"
         }
     }
 
+    when {
+        showSplash -> SplashScreen()
+
+        startDestination != null -> {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .systemBarsPadding()
+            ) {
+                NavigationWrapper(
+                    stepCounterViewModel = stepCounterViewModel,
+                    userSessionViewModel = userSessionViewModel,
+                    startDestination = startDestination!!
+                )
+            }
+        }
+    }
 }

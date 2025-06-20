@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import android.R.attr.scaleX
+import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.core.graphics.toColorInt
 import com.github.mikephil.charting.charts.CombinedChart
@@ -108,11 +109,7 @@ fun DataUserScreen(navController: NavHostController,
     ) {
         Spacer(modifier = Modifier.height(16.dp))
 
-        Headers("Mi Progreso", color = Color(0xFF7948DB))
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        HeaderDatos(pasos = stepsToday, calorias = calories.toFloat())
+        HeaderDatos(pasos = stepsToday)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -144,7 +141,7 @@ fun DataUserScreen(navController: NavHostController,
 }
 
 @Composable
-fun HeaderDatos(pasos: Int, calorias: Float) {
+fun HeaderDatos(pasos: Int) {
     /**
      * Encabezado visual que muestra las calorías quemadas y título principal.
      *
@@ -156,14 +153,14 @@ fun HeaderDatos(pasos: Int, calorias: Float) {
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Headers("Pasos de Hoy", color = Color(0xFF7948DB))
+        Headers("Mi Progreso", color = Color(0xFF7948DB))
 
         Spacer(modifier = Modifier.height(8.dp))
 
         // Ícono
         Icon(
-            imageVector = Icons.Filled.LocalFireDepartment,
-            contentDescription = "Calorías",
+            imageVector = Icons.Filled.DirectionsWalk,
+            contentDescription = "Pasos hoy",
             modifier = Modifier
                 .size(32.dp)
                 .graphicsLayer {
@@ -174,14 +171,14 @@ fun HeaderDatos(pasos: Int, calorias: Float) {
 
         //Texto Calorias
         Text(
-            text = "${calorias.toInt()}",
+            text = "${pasos}",
             style = MaterialTheme.typography.titleLarge.copy(fontSize = 100.sp),
             color = Color(0xFF7948DB),
         )
 
         //Texto Kcal
         Text(
-            text = "Kcal",
+            text = "Pasos de hoy",
             style = MaterialTheme.typography.titleLarge.copy(fontSize = 24.sp),
             color = Color(0xFF675B5B)
         )
@@ -418,142 +415,6 @@ fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float)
     }
 }
 
-/*
-@Composable
-fun CombinedProgressChart(
-    steps: List<Float>,
-    labels: List<String>,
-    meta: Float
-) {
-    var showSnackbar by remember { mutableStateOf(false) }
-    var snackbarMessage by remember { mutableStateOf("") }
-    var snackbarColor by remember { mutableStateOf(Color.Green) }
-    var selectedIndex by remember { mutableIntStateOf(0) }
-
-    AndroidView(
-        factory = { context ->
-            CombinedChart(context).apply {
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
-                setBackgroundColor("#F9F9F9".toColorInt())
-                description.isEnabled = false
-                setTouchEnabled(true)
-                isDoubleTapToZoomEnabled = false
-                setScaleEnabled(false)
-                legend.isEnabled = false
-                axisLeft.isEnabled = false
-                axisRight.textSize = 12f
-                axisRight.gridColor = android.graphics.Color.LTGRAY
-                xAxis.setDrawAxisLine(true)
-                xAxis.setDrawGridLines(true)
-                xAxis.gridLineWidth = 1f
-                xAxis.gridColor = android.graphics.Color.LTGRAY
-                animateX(500)
-
-                setOnChartValueSelectedListener(object : com.github.mikephil.charting.listener.OnChartValueSelectedListener {
-                    override fun onValueSelected(e: Entry?, h: Highlight?) {
-                        e?.let {
-                            val index = it.x.toInt()
-                            selectedIndex = index
-                            if (steps[index] >= meta) {
-                                snackbarMessage = "Superaste la meta"
-                                snackbarColor = Color(0xFF4CAF50)
-                            } else {
-                                snackbarMessage = "No superaste la meta"
-                                snackbarColor = Color(0xFFF44336)
-                            }
-                            showSnackbar = true
-                        }
-                    }
-
-                    override fun onNothingSelected() {}
-                })
-            }
-        },
-        update = { chart ->
-            val maxStep = steps.maxOrNull() ?: 0f
-            val roundedMax = ((maxStep + 500) / 500).toInt() * 500f
-            val maxY = maxOf(roundedMax, meta)
-
-            val minStep = steps.minOrNull() ?: 0f
-            val roundedMin = ((minStep - 500) / 500).toInt() * 500f
-            val minY = minOf(roundedMin, meta)
-
-            Log.e("DEBUG_DATA", "Minimo $minY, Aximo $maxY" )
-
-            chart.axisRight.apply {
-                axisMinimum = minY
-                axisMaximum = maxY
-                labelCount = 5
-                granularity = 1f
-                removeAllLimitLines()
-                addLimitLine(LimitLine(meta, meta.toInt().toString()).apply {
-                    lineColor = android.graphics.Color.RED
-                    lineWidth = 2f
-                    textColor = android.graphics.Color.RED
-                    textSize = 12f
-                    labelPosition = LimitLine.LimitLabelPosition.RIGHT_TOP
-                })
-            }
-
-            chart.xAxis.apply {
-                position = XAxis.XAxisPosition.BOTTOM
-                granularity = 1f
-                setDrawGridLines(true)
-                setDrawLabels(true)
-                valueFormatter = IndexAxisValueFormatter(labels)
-            }
-
-            val lineEntries = steps.mapIndexed { i, v -> Entry(i.toFloat(), v) }
-            val lineSet = LineDataSet(lineEntries, "Pasos").apply {
-                mode = LineDataSet.Mode.CUBIC_BEZIER
-                color = "#7948DB".toColorInt()
-                setCircleColor("#7948DB".toColorInt())
-                circleRadius = 6f
-                lineWidth = 2f
-                setDrawFilled(true)
-                fillColor = "#D1C4E9".toColorInt()
-                fillAlpha = 100
-                valueTextSize = 10f
-                axisDependency = YAxis.AxisDependency.RIGHT
-            }
-
-            val barEntry = BarEntry(selectedIndex.toFloat(), steps[selectedIndex])
-            val barSet = BarDataSet(listOf(barEntry), "Seleccionado").apply {
-                setDrawValues(false)
-                setGradientColor(android.graphics.Color.parseColor("#7948DB"), android.graphics.Color.parseColor("#FF4081"))
-                axisDependency = YAxis.AxisDependency.RIGHT
-            }
-
-            val combined = CombinedData().apply {
-                setData(LineData(lineSet))
-                setData(BarData(barSet))
-            }
-
-            chart.data = combined
-            chart.invalidate()
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(350.dp)
-    )
-
-    AnimatedSnackbar(
-        visible = showSnackbar,
-        message = snackbarMessage,
-        backgroundColor = snackbarColor
-    )
-
-    LaunchedEffect(showSnackbar) {
-        if (showSnackbar) {
-            kotlinx.coroutines.delay(2000)
-            showSnackbar = false
-        }
-    }
-}
-*/
 
 @Composable
 fun MuestraResumen(total: Int, promedio: Int, unidad: String = "Kcal") {

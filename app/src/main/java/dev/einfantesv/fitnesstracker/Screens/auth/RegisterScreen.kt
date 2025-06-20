@@ -1,29 +1,24 @@
 package dev.einfantesv.fitnesstracker.Screens.auth
 
 import android.widget.Toast
-import androidx.compose.runtime.Composable
-import androidx.navigation.NavHostController
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import dev.einfantesv.fitnesstracker.Screens.util.ActionButton
 import dev.einfantesv.fitnesstracker.Screens.util.Headers
-import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseAuthManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 @Composable
 fun RegisterScreen(navController: NavHostController) {
@@ -44,12 +39,9 @@ fun RegisterScreen(navController: NavHostController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(15.dp))
-
         Headers("Crear mi cuenta", navController, true)
-
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Campo Nombre
         OutlinedTextField(
             value = nombre,
             onValueChange = { nombre = it },
@@ -60,7 +52,6 @@ fun RegisterScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Campo Apellido
         OutlinedTextField(
             value = apellido,
             onValueChange = { apellido = it },
@@ -71,7 +62,6 @@ fun RegisterScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Campo Correo
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -83,7 +73,6 @@ fun RegisterScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Campo Contraseña
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -93,16 +82,14 @@ fun RegisterScreen(navController: NavHostController) {
             visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {
-                val image = if (showPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff
                 IconButton(onClick = { showPassword = !showPassword }) {
-                    Icon(imageVector = image, contentDescription = null)
+                    Icon(imageVector = if (showPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff, contentDescription = null)
                 }
             }
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Campo Confirmar contraseña
         OutlinedTextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
@@ -112,20 +99,17 @@ fun RegisterScreen(navController: NavHostController) {
             visualTransformation = if (showConfirmPassword) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {
-                val image = if (showConfirmPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff
                 IconButton(onClick = { showConfirmPassword = !showConfirmPassword }) {
-                    Icon(imageVector = image, contentDescription = null)
+                    Icon(imageVector = if (showConfirmPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff, contentDescription = null)
                 }
             }
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Botón hacia elección de meta de pasos diarios
         ActionButton(
             label = "Continuar",
             onClick = {
-
                 if (nombre.isBlank() || apellido.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
                     Toast.makeText(context, "Completa todos los campos", Toast.LENGTH_SHORT).show()
                     return@ActionButton
@@ -142,19 +126,9 @@ fun RegisterScreen(navController: NavHostController) {
                     set("email", email)
                     set("password", password)
                 }
-                navController.navigate("dailySteps")
 
-                CoroutineScope(Dispatchers.Main).launch {
-                    val result = FirebaseAuthManager.registerUser(nombre, apellido, email, password)
-                    if (result.isSuccess){
-                        navController.navigate("login")
-                    }else{
-                        val error = result.exceptionOrNull()?.message?: "Error desconocido"
-                        Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-                    }
-                }
+                navController.navigate("dailySteps")
             }
         )
-
     }
 }
