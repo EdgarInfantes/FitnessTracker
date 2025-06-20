@@ -12,6 +12,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import com.google.firebase.Timestamp
 import dev.einfantesv.fitnesstracker.StepCounterViewModel
+import dev.einfantesv.fitnesstracker.UserModel
 import java.time.Month
 import java.time.ZoneId
 import java.util.Date
@@ -157,6 +158,40 @@ object FirebaseGetDataManager {
             .set(data)
             .addOnSuccessListener { onComplete(true) }
             .addOnFailureListener { onComplete(false) }
+    }
+
+    fun getTopStepUsers(limit: Int = 3, onResult: (List<String>) -> Unit) {
+        FirebaseFirestore.getInstance()
+            .collection("Steps")
+            .orderBy("steps", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .limit(limit.toLong())
+            .get()
+            .addOnSuccessListener { result ->
+                val topUids = result.documents.mapNotNull { it.getString("uid") }
+                onResult(topUids)
+            }
+            .addOnFailureListener {
+                Log.e("FirebaseGetDataManager", "Error al obtener ranking: ${it.message}")
+                onResult(emptyList())
+            }
+    }
+
+    fun getUserByUid(uid: String, onResult: (UserModel?) -> Unit) {
+        FirebaseFirestore.getInstance()
+            .collection("User")
+            .document(uid)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    onResult(document.toObject(UserModel::class.java))
+                } else {
+                    onResult(null)
+                }
+            }
+            .addOnFailureListener {
+                Log.e("FirebaseGetDataManager", "Error al obtener usuario: ${it.message}")
+                onResult(null)
+            }
     }
 
 
