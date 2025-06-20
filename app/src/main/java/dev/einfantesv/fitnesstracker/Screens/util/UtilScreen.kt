@@ -1,5 +1,11 @@
 package dev.einfantesv.fitnesstracker.Screens.util
 
+import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -7,30 +13,30 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -38,7 +44,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import dev.einfantesv.fitnesstracker.R
-import org.w3c.dom.Text
 
 @Composable
 fun ButtonScreen(navController: NavController, screen: String, label : String){
@@ -100,8 +105,6 @@ fun ActionButton(
     }
 }
 
-
-
 @Composable
 fun textDescripResetPass(label: String){
     /**
@@ -116,20 +119,24 @@ fun textDescripResetPass(label: String){
 }
 
 @Composable
-fun asyncImgPerfil(profileImageUrl: String, size: Int) {
-    /**
-     * Composable reutilizable que muestra una imagen de perfil circular desde una URL utilizando Coil.
-     *
-     * La imagen se muestra con borde negro, fondo blanco y ajuste de escala tipo "crop" (recorte centrado).
-     * Solo se renderiza si la URL no está vacía.
-     *
-     * @param profileImageUrl URL de la imagen a mostrar.
-     * @param size Tamaño en dp del círculo que contiene la imagen (ancho y alto).
-     */
+fun asyncImgPerfil(
+    profileImageUrl: String?,
+    profileImageUri: Uri?,
+    selectedAvatarUrl: String? = null,
+    size: Int,
+    shouldDeleteAvatar: Boolean = false
+) {
+    val imageModel: Any? = when {
+        shouldDeleteAvatar -> null
+        profileImageUri != null -> profileImageUri
+        !selectedAvatarUrl.isNullOrBlank() -> selectedAvatarUrl
+        !profileImageUrl.isNullOrBlank() && profileImageUrl.startsWith("http") -> profileImageUrl
+        else -> null
+    }
 
-    if (profileImageUrl.isNotEmpty()) {
+    if (imageModel != null) {
         AsyncImage(
-            model = profileImageUrl,
+            model = imageModel,
             contentDescription = "Imagen de perfil",
             modifier = Modifier
                 .size(size.dp)
@@ -138,8 +145,52 @@ fun asyncImgPerfil(profileImageUrl: String, size: Int) {
                 .border(2.dp, Color.Black, CircleShape),
             contentScale = ContentScale.Crop
         )
+    } else {
+        Icon(
+            imageVector = Icons.Filled.AccountCircle,
+            contentDescription = "Imagen por defecto",
+            modifier = Modifier
+                .size(size.dp)
+                .clip(CircleShape),
+            tint = Color.Gray
+        )
     }
 }
+
+@Composable
+fun AnimatedSnackbar(
+    visible: Boolean,
+    message: String,
+    backgroundColor: Color
+)
+{
+    AnimatedVisibility(
+        visible = visible,
+        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 24.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(backgroundColor)
+                .padding(vertical = 12.dp, horizontal = 20.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = message,
+                color = Color.White,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+
+}
+
+
+
 
 @Composable
 fun Headers(

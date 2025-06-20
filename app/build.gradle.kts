@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -63,5 +64,12 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.5.0") //Iconos
     implementation("io.coil-kt:coil-compose:2.3.0") //Links de internet
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0") //Para los graficos
-
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation ("androidx.datastore:datastore-preferences:1.0.0")
+    implementation(platform("com.google.firebase:firebase-bom:33.15.0")) //Firebase
+    implementation("com.google.firebase:firebase-auth-ktx") //Auth Firebase
+    implementation("com.google.firebase:firebase-firestore-ktx") //Fire
+    implementation("com.google.firebase:firebase-storage") //Sotrage
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0") //Sync color system bar
 }

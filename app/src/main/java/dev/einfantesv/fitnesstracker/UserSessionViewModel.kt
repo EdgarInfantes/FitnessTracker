@@ -1,29 +1,103 @@
 package dev.einfantesv.fitnesstracker
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class UserSessionViewModel : ViewModel() {
-    private val _userEmail = MutableStateFlow<String?>(null)
-    val userEmail: StateFlow<String?> = _userEmail
 
-    fun setUserEmail(email: String) {
-        _userEmail.value = email
+    private val auth = FirebaseAuth.getInstance()
+    private val firestore = FirebaseFirestore.getInstance()
+
+    private val _userUid = MutableStateFlow<String?>(auth.currentUser?.uid)
+    val userUid: StateFlow<String?> = _userUid
+
+    private val _userData = MutableStateFlow<UserModel?>(null)
+    val userData: StateFlow<UserModel?> = _userData
+
+    val profileImageUrl: StateFlow<String?> = userData
+        .map { it?.profileImageUrl }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    init {
+        observeUidChanges()
     }
 
-    // URL de imagen de perfil basada en el correo
-    val profileImageUrl: StateFlow<String> = userEmail.map { email ->
-        when (email.orEmpty()) {
-            "dirtyyr2012@gmail.com" -> "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fstatic.wikia.nocookie.net%2Fficcion-sin-limites%2Fimages%2F5%2F50%2FJOEL.webp%2Frevision%2Flatest%2Fscale-to-width-down%2F1200%3Fcb%3D20220416041602%26path-prefix%3Des"
-            "melva.66.2002@gmail.com" -> "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fstatic.wikia.nocookie.net%2Falfondohaysitio%2Fimages%2F8%2F8d%2FTeresa_(AFHS10).png%2Frevision%2Flatest%2Fscale-to-width-down%2F1200%3Fcb%3D20230512183136%26path-prefix%3Des"
-            "alxmeza63@gmail.com" -> "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.pinimg.com%2Foriginals%2F76%2Fe7%2F48%2F76e7484504c6ae8efd1a4df5cdd282f5.jpg"
-            "admin" -> "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.pinimg.com%2Foriginals%2F76%2Fe7%2F48%2F76e7484504c6ae8efd1a4df5cdd282f5.jpg"
-            else -> ""
+    private fun observeUidChanges() {
+        viewModelScope.launch {
+            userUid.collect { uid ->
+                if (uid != null) {
+                    loadUserData(uid)
+                } else {
+                    _userData.value = null
+                }
+            }
         }
-    }.stateIn(viewModelScope, SharingStarted.Companion.Eagerly, "")
+    }
+
+    fun isUserLoggedIn(): Boolean = auth.currentUser != null
+
+    fun getCurrentUserUid(): String? = auth.currentUser?.uid
+
+    fun refreshUserData(uid: String? = getCurrentUserUid()) {
+        val safeUid = uid ?: return
+
+        firestore.collection("User").document(safeUid).get()
+            .addOnSuccessListener { snapshot ->
+                if (snapshot.exists()) {
+                    _userData.value = snapshot.toObject(UserModel::class.java)
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.e("UserSessionViewModel", "Error al refrescar datos del usuario", exception)
+            }
+    }
+
+    fun signOut() {
+        auth.signOut()
+        _userUid.value = null
+        _userData.value = null
+    }
+
+    fun loadUserData(uid: String? = auth.currentUser?.uid) {
+        uid?.let {
+            firestore.collection("User").document(it)
+                .get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        val user = document.toObject(UserModel::class.java)
+                        println("Usuario cargado: $user")  // 👈 verifica en logcat
+                        _userData.value = user
+                    } else {
+                        println("Documento no existe.")
+                    }
+                }
+                .addOnFailureListener {
+                    println("Error al cargar datos: ${it.message}")
+                    _userData.value = null
+                }
+        }
+    }
+
 }
+
+data class UserModel(
+    val uid: String = "",
+    val firstname: String = "",
+    val lastname: String = "",
+    val email: String = "",
+    val UserFriendCode: Int = 0,
+    val RegisterDate: Timestamp = Timestamp.now(),
+    val privacy: Boolean = false,
+    val profileImageUrl: String = ""
+)

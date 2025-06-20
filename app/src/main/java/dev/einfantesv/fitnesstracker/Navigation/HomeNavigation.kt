@@ -10,10 +10,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dev.einfantesv.fitnesstracker.StepCounterViewModel
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
-import dev.einfantesv.fitnesstracker.screens.home.DataUserScreen
-import dev.einfantesv.fitnesstracker.screens.home.HomeScreen
-import dev.einfantesv.fitnesstracker.screens.home.PrizesScreen
-import dev.einfantesv.fitnesstracker.screens.home.ProfileScreen
+import dev.einfantesv.fitnesstracker.Screens.home.DataUserScreen
+import dev.einfantesv.fitnesstracker.Screens.home.HomeScreen
+import dev.einfantesv.fitnesstracker.Screens.home.PrizesScreen
+import dev.einfantesv.fitnesstracker.Screens.home.ProfileScreen
 
 @Composable
 fun HomeNavigation(mainNavController: NavHostController, stepCounterViewModel: StepCounterViewModel, userSessionViewModel: UserSessionViewModel) {
