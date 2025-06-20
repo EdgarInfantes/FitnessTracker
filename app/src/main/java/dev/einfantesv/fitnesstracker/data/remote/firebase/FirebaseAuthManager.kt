@@ -1,46 +1,48 @@
 package dev.einfantesv.fitnesstracker.data.remote.firebase
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import java.util.Date
 import kotlinx.coroutines.tasks.await
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.Timestamp
 
 object FirebaseAuthManager {
 
     private val auth = FirebaseAuth.getInstance() //Almacena los datos necesarios para logearse
+    @SuppressLint("StaticFieldLeak")
     private val firestore = FirebaseFirestore.getInstance() //Almacena todos los datos que no son sensibles (contraseña)
 
     suspend fun registerUser(
-        name: String = "",
-        lastname:String = "",
+        firstname: String = "",
+        lastname: String = "",
         email: String = "",
-        password:String  ="",
+        password: String = "",
+        dailyGoal: Int = 0
     ) : Result<Unit> {
         return try{
             val authResult = auth.createUserWithEmailAndPassword(email, password).await()
 
             val uid = authResult.user?.uid?: return Result.failure(Exception("No hay usuario"))
 
-            // Obtener la fecha actual en el formato deseado
-            val fechaActual = LocalDate.now()
-            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-            val fechaFormateada = fechaActual.format(formatter)
+            // Obtener la fecha actual en formato TimeStamp
+            val fechaCreacion = Timestamp(Date())
 
             //Todos los campos que quiero guardar en Firebase
             val user = hashMapOf(
                 "uid" to uid,
-                "name" to name,
+                "firstname" to firstname,
                 "lastname" to lastname,
                 "email" to email,
                 "UserFriendCode" to generarCodigoSeguro(),
-                "RegisterDate" to fechaFormateada,
-                "private_account" to false,
-                "profileImageUrl" to ""
+                "RegisterDate" to fechaCreacion,
+                "privacy" to false,
+                "profileImageUrl" to "",
+                "dailyGoal" to dailyGoal
             )
 
             firestore.collection("User")
@@ -64,13 +66,12 @@ object FirebaseAuthManager {
         }
     }
 
-    private fun generarCodigoUnico(): String {
-        val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        return (1..6).map { chars.random() }.joinToString("")
+    private fun generarCodigoUnico(): Int {
+        return (100000..999999).random()
     }
 
-    private suspend fun generarCodigoSeguro(): String {
-        var code: String
+    private suspend fun generarCodigoSeguro(): Int {
+        var code: Int
         var exists: Boolean
 
         do {

@@ -1,11 +1,14 @@
 package dev.einfantesv.fitnesstracker.data.remote.firebase
 
+import android.annotation.SuppressLint
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 object FirebaseUserManager {
 
     private val auth = FirebaseAuth.getInstance()
+    @SuppressLint("StaticFieldLeak")
     private val firestore = FirebaseFirestore.getInstance()
 
     /**
@@ -13,7 +16,7 @@ object FirebaseUserManager {
      */
     fun updateName(uid: String, name: String, lastname: String, onComplete: (Boolean) -> Unit) {
         firestore.collection("User").document(uid)
-            .update(mapOf("name" to name, "lastname" to lastname))
+            .update(mapOf("firstname" to name, "lastname" to lastname))
             .addOnSuccessListener { onComplete(true) }
             .addOnFailureListener { onComplete(false) }
     }
@@ -21,17 +24,31 @@ object FirebaseUserManager {
     /**
      * Actualiza el correo electrónico en FirebaseAuth y Firestore.
      */
-    fun updateEmail(newEmail: String, onComplete: (Boolean) -> Unit) {
+    fun updateEmail(newEmail: String, currentPassword: String, onComplete: (Boolean) -> Unit) {
         val user = auth.currentUser ?: return onComplete(false)
 
-        user.updateEmail(newEmail)
+        val currentEmail = user.email
+        if (currentEmail.isNullOrBlank()) return onComplete(false)
+
+        // Crear credencial para reautenticación
+        val credential = EmailAuthProvider.getCredential(currentEmail, currentPassword)
+
+        // Reautenticación necesaria antes de cambiar el email
+        user.reauthenticate(credential)
             .addOnSuccessListener {
-                firestore.collection("User").document(user.uid)
-                    .update("email", newEmail)
-                    .addOnSuccessListener { onComplete(true) }
+                // Si la reautenticación fue exitosa, actualiza el email
+                user.updateEmail(newEmail)
+                    .addOnSuccessListener {
+                        firestore.collection("User").document(user.uid)
+                            .update("email", newEmail)
+                            .addOnSuccessListener { onComplete(true) }
+                            .addOnFailureListener { onComplete(false) }
+                    }
                     .addOnFailureListener { onComplete(false) }
             }
-            .addOnFailureListener { onComplete(false) }
+            .addOnFailureListener {
+                onComplete(false) // Falló la reautenticación
+            }
     }
 
     /**
@@ -70,7 +87,7 @@ object FirebaseUserManager {
      */
     fun updatePrivacy(uid: String, isPrivate: Boolean, onComplete: (Boolean) -> Unit) {
         firestore.collection("User").document(uid)
-            .update("private_account", isPrivate)
+            .update("privacy", isPrivate)
             .addOnSuccessListener { onComplete(true) }
             .addOnFailureListener { onComplete(false) }
     }

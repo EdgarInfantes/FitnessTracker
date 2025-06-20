@@ -17,16 +17,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import java.text.NumberFormat
 import androidx.compose.ui.viewinterop.AndroidView
@@ -44,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.navigation.NavHostController
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
@@ -76,12 +74,10 @@ fun DataUserScreen(navController: NavHostController,
      */
 
     var selectedPeriod by remember { mutableStateOf("Semanal") }
-    val stepsToday = stepCounterViewModel.stepCount.value
-    val calories = stepCounterViewModel.calories.value
     val steps = stepCounterViewModel.weeklySteps.value
     val labels = stepCounterViewModel.weeklyLabels.value
     val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-    var meta by remember { mutableStateOf(6000f) }
+    var meta by remember { mutableFloatStateOf(6000f) }
 
 
     LaunchedEffect(selectedPeriod, uid) {
@@ -108,18 +104,9 @@ fun DataUserScreen(navController: NavHostController,
     ) {
         Spacer(modifier = Modifier.height(16.dp))
 
-        //Header de la pantalla Datos
-        HeaderDatos(pasos = stepsToday, calorias = calories.toFloat())
+        Headers("Mi Progreso", color = Color(0xFF7948DB))
 
         Spacer(modifier = Modifier.height(16.dp))
-
-        //Texto para mostrar la cantidad de pasos
-        Text(
-            text = "Pasos: $stepsToday",
-            style = MaterialTheme.typography.bodyLarge,
-            color = Color(0xFF7948DB)
-        )
-
 
         PeriodSelector(selected = selectedPeriod) { selectedPeriod = it }
 
@@ -136,9 +123,6 @@ fun DataUserScreen(navController: NavHostController,
             CombinedProgressChart(steps = steps, labels = labels, meta = meta)
         }
 
-
-        //CombinedProgressChart(steps = steps, labels = labels, meta = meta)
-
         Spacer(modifier = Modifier.height(24.dp))
 
         val (totalPasos, promedioPasos) = promedio(steps, isMonthly = selectedPeriod == "Mensual")
@@ -151,50 +135,50 @@ fun DataUserScreen(navController: NavHostController,
     }
 }
 
-@Composable
-fun HeaderDatos(pasos: Int, calorias: Float) {
-    /**
-     * Encabezado visual que muestra las calorías quemadas y título principal.
-     *
-     * @param pasos número de pasos del día (no se usa visualmente aquí)
-     * @param calorias calorías quemadas representadas en texto grande
-     */
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Headers("Pasos de Hoy", color = Color(0xFF7948DB))
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Ícono
-        Icon(
-            imageVector = Icons.Filled.LocalFireDepartment,
-            contentDescription = "Calorías",
-            modifier = Modifier
-                .size(32.dp)
-                .graphicsLayer {
-                    scaleX = -1f // reflejo horizontal
-                },
-            tint = Color.Black
-        )
-
-        //Texto Calorias
-        Text(
-            text = "${calorias.toInt()}",
-            style = MaterialTheme.typography.titleLarge.copy(fontSize = 100.sp),
-            color = Color(0xFF7948DB),
-        )
-
-        //Texto Kcal
-        Text(
-            text = "Kcal",
-            style = MaterialTheme.typography.titleLarge.copy(fontSize = 24.sp),
-            color = Color(0xFF675B5B)
-        )
-    }
-}
+//@Composable
+//fun HeaderDatos(pasos: Int, calorias: Float) {
+//    /**
+//     * Encabezado visual que muestra las calorías quemadas y título principal.
+//     *
+//     * @param pasos número de pasos del día (no se usa visualmente aquí)
+//     * @param calorias calorías quemadas representadas en texto grande
+//     */
+//
+//    Column(
+//        modifier = Modifier.fillMaxWidth(),
+//        horizontalAlignment = Alignment.CenterHorizontally,
+//    ) {
+//        Headers("Pasos de Hoy", color = Color(0xFF7948DB))
+//
+//        Spacer(modifier = Modifier.height(8.dp))
+//
+//        // Ícono
+//        Icon(
+//            imageVector = Icons.Filled.LocalFireDepartment,
+//            contentDescription = "Calorías",
+//            modifier = Modifier
+//                .size(32.dp)
+//                .graphicsLayer {
+//                    scaleX = -1f // reflejo horizontal
+//                },
+//            tint = Color.Black
+//        )
+//
+//        //Texto Calorias
+//        Text(
+//            text = "${calorias.toInt()}",
+//            style = MaterialTheme.typography.titleLarge.copy(fontSize = 100.sp),
+//            color = Color(0xFF7948DB),
+//        )
+//
+//        //Texto Kcal
+//        Text(
+//            text = "Kcal",
+//            style = MaterialTheme.typography.titleLarge.copy(fontSize = 24.sp),
+//            color = Color(0xFF675B5B)
+//        )
+//    }
+//}
 
 @Composable
 fun PeriodSelector(selected: String, onSelect: (String) -> Unit) {
@@ -285,7 +269,7 @@ fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float)
      * @param meta valor de meta diaria o mensual
      */
 
-    var selectedIndex by remember { mutableStateOf(steps.lastIndex) }
+    var selectedIndex by remember { mutableIntStateOf(steps.lastIndex) }
     var showSnackbar by remember { mutableStateOf(false) }
     var snackbarMessage by remember { mutableStateOf("") }
     var snackbarColor by remember { mutableStateOf(Color.Green) }
@@ -366,8 +350,8 @@ fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float)
 
             val lineDataSet = LineDataSet(lineEntries, "Pasos").apply {
                 mode = LineDataSet.Mode.CUBIC_BEZIER
-                color = android.graphics.Color.parseColor("#7948DB")
-                setCircleColor(android.graphics.Color.parseColor("#7948DB"))
+                color = "#7948DB".toColorInt()
+                setCircleColor("#7948DB".toColorInt())
                 setDrawCircles(true)
                 circleRadius = 5f
                 lineWidth = 2f
@@ -394,8 +378,8 @@ fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float)
                 snackbarMessage = "Superaste la meta"
                 snackbarColor = Color(0xFF4CAF50)
             }else{
-                snackbarMessage = "No superaste la meta"
-                snackbarColor = Color(0xFFF44336)
+                snackbarMessage = "No te rindas, puedes conseguirlo"
+                snackbarColor = Color("#ECCD0B".toColorInt())
             }
             showSnackbar = true
 

@@ -1,5 +1,6 @@
 package dev.einfantesv.fitnesstracker.data.remote.firebase
 
+import android.annotation.SuppressLint
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
@@ -14,8 +15,8 @@ import java.time.ZoneId
 import java.util.Date
 import java.time.format.TextStyle
 
-
 object FirebaseGetDataManager {
+    @SuppressLint("StaticFieldLeak")
     private val firestore = FirebaseFirestore.getInstance()
 
     fun getAvatarUrls(onResult: (List<String>) -> Unit) {
@@ -122,7 +123,7 @@ object FirebaseGetDataManager {
             .document(uid)
             .get()
             .addOnSuccessListener { document ->
-                val goal = document.getLong("MetaDiaria")?.toInt()
+                val goal = document.getLong("dailyGoal")?.toInt()
                 onResult(goal)
             }
             .addOnFailureListener {

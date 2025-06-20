@@ -1,25 +1,17 @@
 package dev.einfantesv.fitnesstracker
 
-import android.app.Application
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
-import java.net.HttpURLConnection
-import java.net.URL
-
-
 
 class UserSessionViewModel : ViewModel() {
 
@@ -35,8 +27,6 @@ class UserSessionViewModel : ViewModel() {
     val profileImageUrl: StateFlow<String?> = userData
         .map { it?.profileImageUrl }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
-
 
     init {
         observeUidChanges()
@@ -72,8 +62,6 @@ class UserSessionViewModel : ViewModel() {
             }
     }
 
-
-
     fun signOut() {
         auth.signOut()
         _userUid.value = null
@@ -100,18 +88,15 @@ class UserSessionViewModel : ViewModel() {
         }
     }
 
-
-
 }
-
 
 data class UserModel(
     val uid: String = "",
-    val name: String = "",
+    val firstname: String = "",
     val lastname: String = "",
     val email: String = "",
-    val UserFriendCode: String = "",
-    val RegisterDate: String = "",
-    val private_account: Boolean = false,
+    val UserFriendCode: Int = 0,
+    val RegisterDate: Timestamp = Timestamp.now(),
+    val privacy: Boolean = false,
     val profileImageUrl: String = ""
 )
