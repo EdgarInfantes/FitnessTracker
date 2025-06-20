@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
@@ -124,6 +125,7 @@ fun RegisterScreen(navController: NavHostController) {
         ActionButton(
             label = "Continuar",
             onClick = {
+
                 if (nombre.isBlank() || apellido.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
                     Toast.makeText(context, "Completa todos los campos", Toast.LENGTH_SHORT).show()
                     return@ActionButton
@@ -141,6 +143,16 @@ fun RegisterScreen(navController: NavHostController) {
                     set("password", password)
                 }
                 navController.navigate("dailySteps")
+
+                CoroutineScope(Dispatchers.Main).launch {
+                    val result = FirebaseAuthManager.registerUser(nombre, apellido, email, password)
+                    if (result.isSuccess){
+                        navController.navigate("login")
+                    }else{
+                        val error = result.exceptionOrNull()?.message?: "Error desconocido"
+                        Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                    }
+                }
             }
         )
 

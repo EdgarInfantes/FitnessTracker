@@ -2,13 +2,16 @@ package dev.einfantesv.fitnesstracker.data.remote.firebase
 
 import android.annotation.SuppressLint
 import com.google.firebase.auth.EmailAuthProvider
+
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 object FirebaseUserManager {
 
     private val auth = FirebaseAuth.getInstance()
+
     @SuppressLint("StaticFieldLeak")
+
     private val firestore = FirebaseFirestore.getInstance()
 
     /**
@@ -16,7 +19,9 @@ object FirebaseUserManager {
      */
     fun updateName(uid: String, name: String, lastname: String, onComplete: (Boolean) -> Unit) {
         firestore.collection("User").document(uid)
+
             .update(mapOf("firstname" to name, "lastname" to lastname))
+
             .addOnSuccessListener { onComplete(true) }
             .addOnFailureListener { onComplete(false) }
     }
@@ -24,6 +29,7 @@ object FirebaseUserManager {
     /**
      * Actualiza el correo electrónico en FirebaseAuth y Firestore.
      */
+
     fun updateEmail(newEmail: String, currentPassword: String, onComplete: (Boolean) -> Unit) {
         val user = auth.currentUser ?: return onComplete(false)
 
@@ -49,6 +55,7 @@ object FirebaseUserManager {
             .addOnFailureListener {
                 onComplete(false) // Falló la reautenticación
             }
+
     }
 
     /**
@@ -88,6 +95,7 @@ object FirebaseUserManager {
     fun updatePrivacy(uid: String, isPrivate: Boolean, onComplete: (Boolean) -> Unit) {
         firestore.collection("User").document(uid)
             .update("privacy", isPrivate)
+
             .addOnSuccessListener { onComplete(true) }
             .addOnFailureListener { onComplete(false) }
     }

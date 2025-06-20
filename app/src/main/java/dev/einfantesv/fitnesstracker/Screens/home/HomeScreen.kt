@@ -43,6 +43,7 @@ fun HomeScreen(
     var hasPermission by remember { mutableStateOf(false) }
     val elapsedMinutes by stepCounterViewModel.elapsedMinutes
     val username = userData?.firstname ?: "Usuario"
+
     val profile = userData?.profileImageUrl
 
 

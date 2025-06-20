@@ -78,8 +78,13 @@ fun DataUserScreen(navController: NavHostController,
     val labels = stepCounterViewModel.weeklyLabels.value
     val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     var meta by remember { mutableFloatStateOf(6000f) }
-
-
+    val stepsToday = stepCounterViewModel.stepCount.value
+    val calories = stepCounterViewModel.calories.value
+    val steps = stepCounterViewModel.weeklySteps.value
+    val labels = stepCounterViewModel.weeklyLabels.value
+    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    var meta by remember { mutableStateOf(6000f) }
+    
     LaunchedEffect(selectedPeriod, uid) {
         FirebaseGetDataManager.getUserStepGoal(uid) { goal ->
             if (goal != null) {
@@ -269,7 +274,7 @@ fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float)
      * @param meta valor de meta diaria o mensual
      */
 
-    var selectedIndex by remember { mutableIntStateOf(steps.lastIndex) }
+    var selectedIndex by remember { mutableStateOf(steps.lastIndex) }
     var showSnackbar by remember { mutableStateOf(false) }
     var snackbarMessage by remember { mutableStateOf("") }
     var snackbarColor by remember { mutableStateOf(Color.Green) }
@@ -352,6 +357,10 @@ fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float)
                 mode = LineDataSet.Mode.CUBIC_BEZIER
                 color = "#7948DB".toColorInt()
                 setCircleColor("#7948DB".toColorInt())
+
+                color = android.graphics.Color.parseColor("#7948DB")
+                setCircleColor(android.graphics.Color.parseColor("#7948DB"))
+
                 setDrawCircles(true)
                 circleRadius = 5f
                 lineWidth = 2f
@@ -379,7 +388,8 @@ fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float)
                 snackbarColor = Color(0xFF4CAF50)
             }else{
                 snackbarMessage = "No te rindas, puedes conseguirlo"
-                snackbarColor = Color("#ECCD0B".toColorInt())
+                snackbarColor = Color(0xFFF44336)
+
             }
             showSnackbar = true
 

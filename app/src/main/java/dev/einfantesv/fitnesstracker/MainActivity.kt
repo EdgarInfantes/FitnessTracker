@@ -36,7 +36,6 @@ class MainActivity : ComponentActivity() {
         )[UserSessionViewModel::class.java]
 
         WindowCompat.setDecorFitsSystemWindows(window, true)
-
         setContent {
             MainAppContent(stepCounterViewModel, userSessionViewModel)
         }
@@ -62,7 +61,6 @@ fun MainAppContent(
             darkIcons = true // <- Esto es clave para que los íconos se vean NEGROS
         )
     }
-
     var showSplash by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
@@ -76,6 +74,7 @@ fun MainAppContent(
         val isUserLoggedIn = FirebaseAuth.getInstance().currentUser != null
         val startDestination = if (isUserLoggedIn) "home" else "login"
 
+
         Box(modifier = Modifier
             .fillMaxSize()
             .systemBarsPadding()
@@ -86,5 +85,11 @@ fun MainAppContent(
                 startDestination = startDestination
             )
         }
+
+        NavigationWrapper(
+            stepCounterViewModel = stepCounterViewModel,
+            userSessionViewModel = userSessionViewModel,
+            startDestination = startDestination
+        )
     }
 }
