@@ -27,15 +27,7 @@ object FirebaseAuthManager {
         email: String = "",
         password: String = "",
         dailyGoal: Int = 0
-    private val firestore = FirebaseFirestore.getInstance() //Almacena todos los datos que no son sensibles (contraseña)
-
-    suspend fun registerUser(
-        name: String = "",
-        lastname:String = "",
-        email: String = "",
-        password:String  ="",
-
-    ) : Result<Unit> {
+    ): Result<Unit> {
         return try{
             val authResult = auth.createUserWithEmailAndPassword(email, password).await()
 
@@ -44,12 +36,6 @@ object FirebaseAuthManager {
 
             // Obtener la fecha actual en formato TimeStamp
             val fechaCreacion = Timestamp(Date())
-
-            // Obtener la fecha actual en el formato deseado
-            val fechaActual = LocalDate.now()
-            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-            val fechaFormateada = fechaActual.format(formatter)
-
 
             //Todos los campos que quiero guardar en Firebase
             val user = hashMapOf(

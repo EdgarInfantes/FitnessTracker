@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import android.view.ViewGroup
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,12 +22,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import java.text.NumberFormat
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
@@ -45,6 +46,8 @@ import androidx.navigation.NavHostController
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import android.R.attr.scaleX
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.core.graphics.toColorInt
 import com.github.mikephil.charting.charts.CombinedChart
 import com.github.mikephil.charting.components.LimitLine
@@ -80,10 +83,6 @@ fun DataUserScreen(navController: NavHostController,
     var meta by remember { mutableFloatStateOf(6000f) }
     val stepsToday = stepCounterViewModel.stepCount.value
     val calories = stepCounterViewModel.calories.value
-    val steps = stepCounterViewModel.weeklySteps.value
-    val labels = stepCounterViewModel.weeklyLabels.value
-    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-    var meta by remember { mutableStateOf(6000f) }
     
     LaunchedEffect(selectedPeriod, uid) {
         FirebaseGetDataManager.getUserStepGoal(uid) { goal ->
@@ -110,6 +109,10 @@ fun DataUserScreen(navController: NavHostController,
         Spacer(modifier = Modifier.height(16.dp))
 
         Headers("Mi Progreso", color = Color(0xFF7948DB))
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        HeaderDatos(pasos = stepsToday, calorias = calories.toFloat())
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -140,50 +143,50 @@ fun DataUserScreen(navController: NavHostController,
     }
 }
 
-//@Composable
-//fun HeaderDatos(pasos: Int, calorias: Float) {
-//    /**
-//     * Encabezado visual que muestra las calorías quemadas y título principal.
-//     *
-//     * @param pasos número de pasos del día (no se usa visualmente aquí)
-//     * @param calorias calorías quemadas representadas en texto grande
-//     */
-//
-//    Column(
-//        modifier = Modifier.fillMaxWidth(),
-//        horizontalAlignment = Alignment.CenterHorizontally,
-//    ) {
-//        Headers("Pasos de Hoy", color = Color(0xFF7948DB))
-//
-//        Spacer(modifier = Modifier.height(8.dp))
-//
-//        // Ícono
-//        Icon(
-//            imageVector = Icons.Filled.LocalFireDepartment,
-//            contentDescription = "Calorías",
-//            modifier = Modifier
-//                .size(32.dp)
-//                .graphicsLayer {
-//                    scaleX = -1f // reflejo horizontal
-//                },
-//            tint = Color.Black
-//        )
-//
-//        //Texto Calorias
-//        Text(
-//            text = "${calorias.toInt()}",
-//            style = MaterialTheme.typography.titleLarge.copy(fontSize = 100.sp),
-//            color = Color(0xFF7948DB),
-//        )
-//
-//        //Texto Kcal
-//        Text(
-//            text = "Kcal",
-//            style = MaterialTheme.typography.titleLarge.copy(fontSize = 24.sp),
-//            color = Color(0xFF675B5B)
-//        )
-//    }
-//}
+@Composable
+fun HeaderDatos(pasos: Int, calorias: Float) {
+    /**
+     * Encabezado visual que muestra las calorías quemadas y título principal.
+     *
+     * @param pasos número de pasos del día (no se usa visualmente aquí)
+     * @param calorias calorías quemadas representadas en texto grande
+     */
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Headers("Pasos de Hoy", color = Color(0xFF7948DB))
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Ícono
+        Icon(
+            imageVector = Icons.Filled.LocalFireDepartment,
+            contentDescription = "Calorías",
+            modifier = Modifier
+                .size(32.dp)
+                .graphicsLayer {
+                    scaleX = -1f // reflejo horizontal
+                },
+            tint = Color.Black
+        )
+
+        //Texto Calorias
+        Text(
+            text = "${calorias.toInt()}",
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 100.sp),
+            color = Color(0xFF7948DB),
+        )
+
+        //Texto Kcal
+        Text(
+            text = "Kcal",
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 24.sp),
+            color = Color(0xFF675B5B)
+        )
+    }
+}
 
 @Composable
 fun PeriodSelector(selected: String, onSelect: (String) -> Unit) {

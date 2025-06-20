@@ -74,10 +74,10 @@ fun MainAppContent(
         val isUserLoggedIn = FirebaseAuth.getInstance().currentUser != null
         val startDestination = if (isUserLoggedIn) "home" else "login"
 
-
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .systemBarsPadding()
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding()
         ) {
             NavigationWrapper(
                 stepCounterViewModel = stepCounterViewModel,
@@ -85,11 +85,6 @@ fun MainAppContent(
                 startDestination = startDestination
             )
         }
-
-        NavigationWrapper(
-            stepCounterViewModel = stepCounterViewModel,
-            userSessionViewModel = userSessionViewModel,
-            startDestination = startDestination
-        )
     }
+
 }
