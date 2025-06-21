@@ -25,71 +25,68 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import dev.einfantesv.fitnesstracker.Permissions.rememberRequestActivityRecognitionPermission
 import dev.einfantesv.fitnesstracker.Screens.util.asyncImgPerfil
 import dev.einfantesv.fitnesstracker.StepCounterViewModel
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
+import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseGetDataManager
 import kotlinx.coroutines.delay
 
 @Composable
 fun HomeScreen(
     navController: NavHostController,
-    stepCounterViewModel: StepCounterViewModel,
-    userSessionViewModel: UserSessionViewModel
+    stepCounterViewModel: StepCounterViewModel = viewModel(),
+    userSessionViewModel: UserSessionViewModel = viewModel()
 ) {
-
     val userData by userSessionViewModel.userData.collectAsState()
     var hasPermission by remember { mutableStateOf(false) }
-    val elapsedMinutes by stepCounterViewModel.elapsedMinutes
+
+    // Valores reactivos desde el ViewModel
+    val stepCount by remember { derivedStateOf { stepCounterViewModel.stepCount } }
+    val stepsToday by remember { derivedStateOf { stepCounterViewModel.stepsToday } }
+    val elapsedMinutes by remember { derivedStateOf { stepCounterViewModel.elapsedMinutes } }
+    val caloriesToday by remember { derivedStateOf { stepCounterViewModel.caloriesToday.toInt() } }
+    val distanceToday by remember { derivedStateOf { stepCounterViewModel.distanceToday.toInt() } }
+
     val username = userData?.firstname ?: "Usuario"
+
     val profile = userData?.profileImageUrl
+    val uid = userData?.uid ?: ""
 
-
-    // Solicitud de permiso reutilizable
     val requestPermission = rememberRequestActivityRecognitionPermission { granted ->
         hasPermission = granted
-        if (granted) {
-            stepCounterViewModel.startListening()
-        } else {
-            stepCounterViewModel.stopListening()
-        }
+        if (granted) stepCounterViewModel.startListening() else stepCounterViewModel.stopListening()
     }
 
-    // Lanzar una vez al inicio
-    LaunchedEffect(Unit) {
-        requestPermission()
-    }
+    LaunchedEffect(Unit) { requestPermission() }
 
-    // Contador de minutos solo si el usuario camina
     LaunchedEffect(hasPermission) {
         if (hasPermission) {
-            var lastStepCount = stepCounterViewModel.stepCount.value
+            var lastStepCount = stepCount
             while (true) {
-                delay(60_000) // Espera 1 minuto
-                val currentStepCount = stepCounterViewModel.stepCount.value
+                delay(5000)
+                val currentStepCount = stepCounterViewModel.stepCount
                 if (currentStepCount > lastStepCount) {
-                    //elapsedMinutes++
+                    FirebaseGetDataManager.saveStepsIfFirstWalkToday(
+                        uid = uid,
+                        steps = currentStepCount,
+                        acTime = stepCounterViewModel.elapsedMinutes,
+                        acCalories = stepCounterViewModel.caloriesToday,
+                        acDistance = stepCounterViewModel.distanceToday
+                    )
                     lastStepCount = currentStepCount
                 }
             }
-        } else {
-            //elapsedMinutes = 0
         }
     }
 
-    fun formatElapsedTime(minutes: Int): String {
-        return if (minutes >= 60) {
-            val h = minutes / 60
-            val m = minutes % 60
-            "${h}h ${m}m"
-        } else {
-            "${minutes} min"
-        }
-    }
-
-    fun calculateCalories(steps: Int): Int {
-        return (steps * 0.04).toInt()
+    fun formatElapsedTime(minutes: Double): String {
+        val totalMinutes = minutes.toInt()
+        val hours = totalMinutes / 60
+        val remainingMinutes = totalMinutes % 60
+        return if (hours > 0) "${hours}h ${remainingMinutes}m" else "$remainingMinutes min"
     }
 
     Column(
@@ -100,32 +97,22 @@ fun HomeScreen(
             .imePadding(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         Spacer(modifier = Modifier.height(25.dp))
-        //Texto de Hola Usuario
+        HomeHeader(username = username, profileImageUrl = profile, profileImageUri = null)
 
-
-        HomeHeader(
-            username = username,
-            profileImageUrl = profile,
-            profileImageUri = null
-        )
-
-
-        // Circulo de contar pasos
         if (hasPermission) {
             StepCircle(
                 permissionGranted = true,
-                stepCount = stepCounterViewModel.stepCount.value,
+                stepCount = stepsToday,
                 elapsedTime = formatElapsedTime(elapsedMinutes),
-                calories = calculateCalories(stepCounterViewModel.stepCount.value),
-                distance = 0
+                calories = caloriesToday,
+                distance = distanceToday
             )
         } else {
             StepCircle(
                 permissionGranted = false,
                 stepCount = 0,
-                elapsedTime = formatElapsedTime(elapsedMinutes),
+                elapsedTime = formatElapsedTime(0.0),
                 calories = 0,
                 distance = 0
             )
@@ -136,13 +123,11 @@ fun HomeScreen(
         }
 
         Spacer(modifier = Modifier.height(50.dp))
-
-
     }
 }
 
 @Composable
-fun HomeHeader(username: String = "Edgar", profileImageUrl: String?, profileImageUri: Uri?) {
+fun HomeHeader(username: String, profileImageUrl: String?, profileImageUri: Uri?) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -150,7 +135,6 @@ fun HomeHeader(username: String = "Edgar", profileImageUrl: String?, profileImag
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Texto combinado
         Text(
             text = buildAnnotatedString {
                 withStyle(style = SpanStyle(color = Color.Black)) { append("Hola, ") }
@@ -159,8 +143,6 @@ fun HomeHeader(username: String = "Edgar", profileImageUrl: String?, profileImag
             style = MaterialTheme.typography.titleLarge.copy(fontSize = 28.sp),
             fontWeight = FontWeight.Bold
         )
-
-        // Imagen de perfil
         Box(
             modifier = Modifier
                 .size(64.dp)
@@ -168,15 +150,13 @@ fun HomeHeader(username: String = "Edgar", profileImageUrl: String?, profileImag
         ) {
             asyncImgPerfil(
                 profileImageUrl = profileImageUrl,
-                profileImageUri = null,
+                profileImageUri = profileImageUri,
                 selectedAvatarUrl = null,
                 size = 64
             )
-
         }
     }
 }
-
 
 @Composable
 fun StepCircle(
@@ -184,7 +164,7 @@ fun StepCircle(
     stepCount: Int,
     elapsedTime: String,
     calories: Int,
-    distance: Int = 0
+    distance: Int
 ) {
     Box(
         modifier = Modifier.size(325.dp),
@@ -218,21 +198,12 @@ fun StepCircle(
                 tint = Color(0xFF7948DB)
             )
             Spacer(modifier = Modifier.height(16.dp))
-            if (permissionGranted) {
-                Text(
-                    text = "$stepCount",
-                    fontSize = 62.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF7948DB)
-                )
-            } else {
-                Text(
-                    text = "0",
-                    fontSize = 62.sp,
-                    color = Color(0xFF7948DB),
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+            Text(
+                text = stepCount.toString(),
+                fontSize = 62.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF7948DB)
+            )
             Text(
                 text = "PASOS DIARIOS",
                 fontSize = 18.sp,

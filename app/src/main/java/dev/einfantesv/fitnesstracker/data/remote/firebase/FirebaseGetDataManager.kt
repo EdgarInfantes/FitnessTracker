@@ -1,11 +1,9 @@
 package dev.einfantesv.fitnesstracker.data.remote.firebase
 
-import android.annotation.SuppressLint
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import com.google.firebase.Timestamp
@@ -14,10 +12,9 @@ import java.time.Month
 import java.time.ZoneId
 import java.util.Date
 import java.time.format.TextStyle
+import java.util.Calendar
 
 object FirebaseGetDataManager {
-    @SuppressLint("StaticFieldLeak")
-    private val firestore = FirebaseFirestore.getInstance()
 
     fun getAvatarUrls(onResult: (List<String>) -> Unit) {
         val db = FirebaseFirestore.getInstance()
@@ -131,29 +128,64 @@ object FirebaseGetDataManager {
             }
     }
 
+    fun saveStepsIfFirstWalkToday(
+        uid: String,
+        steps: Int,
+        acTime: Double,
+        acCalories: Double,
+        acDistance: Double
+    ) {
+        val db = FirebaseFirestore.getInstance()
 
-    fun saveStepsEvery30Min(uid: String, steps: Int, onComplete: (Boolean) -> Unit) {
-        val firestore = FirebaseFirestore.getInstance()
+        // Crear Timestamp del día actual con hora 00:00:00
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val todayTimestamp = Timestamp(calendar.time)
 
-        val now = LocalDateTime.now()
-        val roundedMinutes = if (now.minute < 30) "00" else "30"
-        val dateStr = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-        val hourStr = now.hour.toString().padStart(2, '0')
-
-        val docId = "${uid}_${dateStr}_$hourStr:$roundedMinutes"
-
-        val data = hashMapOf(
+        val stepData = hashMapOf(
             "uid" to uid,
             "steps" to steps,
-            "timestamp" to Timestamp.now()
+            "acTime" to acTime,
+            "acCalories" to acCalories,
+            "acDistance" to acDistance,
+            "timestamp" to todayTimestamp
         )
 
-        firestore.collection("Steps")
-            .document(docId)
-            .set(data)
-            .addOnSuccessListener { onComplete(true) }
-            .addOnFailureListener { onComplete(false) }
+        // Buscar si ya existe un documento para este uid y fecha
+        db.collection("Steps")
+            .whereEqualTo("uid", uid)
+            .whereEqualTo("timestamp", todayTimestamp)
+            .get()
+            .addOnSuccessListener { documents ->
+                if (documents.isEmpty) {
+                    // No existe, se crea nuevo
+                    db.collection("Steps")
+                        .add(stepData)
+                        .addOnSuccessListener {
+                            Log.d("Firestore", "Documento creado correctamente para hoy.")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("Firestore", "Error al guardar documento: ${e.message}")
+                        }
+                } else {
+                    // Ya existe, se actualiza
+                    val docRef = documents.first().reference
+                    docRef.update(stepData as Map<String, Any>)
+                        .addOnSuccessListener {
+                            Log.d("Firestore", "Documento actualizado correctamente para hoy.")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("Firestore", "Error al actualizar documento: ${e.message}")
+                        }
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Error al verificar documento existente: ${e.message}")
+            }
     }
-
 
 }
