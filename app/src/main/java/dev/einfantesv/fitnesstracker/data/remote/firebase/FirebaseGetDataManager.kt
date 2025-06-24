@@ -173,20 +173,24 @@ object FirebaseGetDataManager {
                     db.collection("Steps")
                         .add(stepData)
                         .addOnSuccessListener {
-                            Log.d("Firestore", "Documento creado correctamente para hoy.")
+                            Log.d("Firestore Steps Update", "Uid: $uid, Pasos: $steps")
+                            Log.d("Firestore Steps Update", "Documento creado correctamente para hoy.")
                         }
                         .addOnFailureListener { e ->
-                            Log.e("Firestore", "Error al guardar documento: ${e.message}")
+                            Log.d("Firestore Steps Update", "Uid: $uid, Pasos: $steps")
+                            Log.e("Firestore Steps Update", "Error al guardar documento: ${e.message}")
                         }
                 } else {
                     // Ya existe, se actualiza
                     val docRef = documents.first().reference
                     docRef.update(stepData as Map<String, Any>)
                         .addOnSuccessListener {
-                            Log.d("Firestore", "Documento actualizado correctamente para hoy.")
+                            Log.d("Firestore Steps Update", "Uid: $uid, Pasos: $steps")
+                            Log.d("Firestore Steps Update", "Documento actualizado correctamente para hoy.")
                         }
                         .addOnFailureListener { e ->
-                            Log.e("Firestore", "Error al actualizar documento: ${e.message}")
+                            Log.d("Firestore Steps Update", "Uid: $uid, Pasos: $steps")
+                            Log.e("Firestore Steps Update", "Error al actualizar documento: ${e.message}")
                         }
                 }
             }
@@ -194,6 +198,31 @@ object FirebaseGetDataManager {
                 Log.e("Firestore", "Error al verificar documento existente: ${e.message}")
             }
     }
+
+    fun getTodaySteps(uid: String, onResult: (Int) -> Unit) {
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val todayTimestamp = Timestamp(calendar.time)
+
+        FirebaseFirestore.getInstance()
+            .collection("Steps")
+            .whereEqualTo("uid", uid)
+            .whereEqualTo("timestamp", todayTimestamp)
+            .get()
+            .addOnSuccessListener { documents ->
+                val steps = documents.firstOrNull()?.getLong("steps")?.toInt() ?: 0
+                onResult(steps)
+            }
+            .addOnFailureListener {
+                Log.e("Firestore", "Error al obtener pasos de hoy: ${it.message}")
+                onResult(0)
+            }
+    }
+
 
     fun getTopStepUsers(limit: Int = 3, onResult: (List<String>) -> Unit) {
         FirebaseFirestore.getInstance()
@@ -228,7 +257,4 @@ object FirebaseGetDataManager {
                 onResult(null)
             }
     }
-
-
-}
 }
