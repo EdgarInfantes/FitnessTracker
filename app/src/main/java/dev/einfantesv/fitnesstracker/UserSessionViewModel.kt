@@ -63,11 +63,14 @@ class UserSessionViewModel : ViewModel() {
             }
     }
 
-    fun signOut() {
-        auth.signOut()
+    fun signOut(stepCounterViewModel: StepCounterViewModel) {
+        FirebaseAuth.getInstance().signOut()
         _userUid.value = null
         _userData.value = null
+        stepCounterViewModel.clearLocalStepData()
+        stepCounterViewModel.stopListening()
     }
+
 
     fun loadUserData(uid: String? = auth.currentUser?.uid) {
         uid?.let {
