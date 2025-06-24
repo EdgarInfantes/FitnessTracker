@@ -52,7 +52,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.einfantesv.fitnesstracker.Screens.util.AnimatedSnackbar
+import dev.einfantesv.fitnesstracker.StepCounterViewModel
 import kotlinx.coroutines.delay
 
 
@@ -75,6 +77,8 @@ fun ProfileScreen(
     var snackbarVisible by remember { mutableStateOf(false) }
     var snackbarMessage by remember { mutableStateOf("") }
     var snackbarColor by remember { mutableStateOf(Color.Green) }
+    val stepCounterViewModel: StepCounterViewModel = viewModel()
+
 
     val pickImageLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -129,7 +133,7 @@ fun ProfileScreen(
         ProfileOptionButton("Cambiar contraseña") {}
         ProfileOptionButton("Cambiar correo") {}
         ProfileOptionButton("Cerrar sesión", R.drawable.baseline_logout_24, Color.Red) {
-            userSessionViewModel.signOut()
+            userSessionViewModel.signOut(stepCounterViewModel)
             navController.navigate("login") {
                 popUpTo(0) // Limpia el backstack
             }

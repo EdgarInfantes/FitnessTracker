@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.google.firebase.auth.FirebaseAuth
 import dev.einfantesv.fitnesstracker.Permissions.rememberRequestActivityRecognitionPermission
 import dev.einfantesv.fitnesstracker.R
 import dev.einfantesv.fitnesstracker.RankingViewModel
@@ -64,7 +65,15 @@ fun HomeScreen(
     val username = userData?.firstname ?: "Usuario"
 
     val profile = userData?.profileImageUrl
-    val uid = userData?.uid ?: ""
+    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    //val uid by userSessionViewModel.userUid.collectAsState() ?: ""
+    //val uid by userSessionViewModel.userUid.collectAsState()
+
+    LaunchedEffect(uid) {
+        uid.let {
+            stepCounterViewModel.onUserLogin(it)
+        }
+    }
 
     val requestPermission = rememberRequestActivityRecognitionPermission { granted ->
         hasPermission = granted
@@ -78,7 +87,8 @@ fun HomeScreen(
             var lastStepCount = stepCount
             while (true) {
                 delay(5000)
-                val currentStepCount = stepCounterViewModel.stepCount
+                val currentStepCount = stepCounterViewModel.stepsToday
+
                 if (currentStepCount > lastStepCount) {
                     FirebaseGetDataManager.saveStepsIfFirstWalkToday(
                         uid = uid,

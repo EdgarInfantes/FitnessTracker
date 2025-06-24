@@ -82,9 +82,8 @@ fun DataUserScreen(navController: NavHostController,
     val labels = stepCounterViewModel.weeklyLabels.value
     val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     var meta by remember { mutableFloatStateOf(6000f) }
-    val stepsToday = stepCounterViewModel.stepCount.value
-    val calories = stepCounterViewModel.calories.value
-    
+    var stepsToday = stepCounterViewModel.stepCount
+
     LaunchedEffect(selectedPeriod, uid) {
         FirebaseGetDataManager.getUserStepGoal(uid) { goal ->
             if (goal != null) {
