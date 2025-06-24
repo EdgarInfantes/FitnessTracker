@@ -1,22 +1,69 @@
 package dev.einfantesv.fitnesstracker.Navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import dev.einfantesv.fitnesstracker.Screens.LoginScreen
+import dev.einfantesv.fitnesstracker.Screens.auth.DailyStepsAssignment
+import dev.einfantesv.fitnesstracker.Screens.auth.resetPass.ForgotPasswordScreen
+import dev.einfantesv.fitnesstracker.Screens.auth.LoginScreen
+import dev.einfantesv.fitnesstracker.Screens.auth.resetPass.PasswordChangedScreen
+import dev.einfantesv.fitnesstracker.Screens.auth.resetPass.ResetPasswordScreen
+import dev.einfantesv.fitnesstracker.Screens.auth.resetPass.VerificationScreen
 import dev.einfantesv.fitnesstracker.StepCounterViewModel
+import dev.einfantesv.fitnesstracker.UserSessionViewModel
+import dev.einfantesv.fitnesstracker.Screens.auth.RegisterScreen
 
 @Composable
-fun NavigationWrapper(stepCounterViewModel: StepCounterViewModel) {
+fun NavigationWrapper(
+    stepCounterViewModel: StepCounterViewModel,
+    userSessionViewModel: UserSessionViewModel,
+    startDestination: String
+) {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = Screens.Login.route) {
-        composable(Screens.Login.route) {
-            LoginScreen(navController)
+
+    NavHost(navController = navController, startDestination = startDestination) {
+        composable("login") {
+            LoginScreen(navController, userSessionViewModel)
         }
-        composable(Screens.Home.route) {
-            HomeNavigation(navController, stepCounterViewModel)
+        composable("home") {
+            HomeNavigation(navController, stepCounterViewModel, userSessionViewModel)
+        }
+        composable("register") {
+            RegisterScreen(navController)
+        }
+        composable("forgotPassword") {
+            ForgotPasswordScreen(navController)
+        }
+        composable("verification") {
+            VerificationScreen(navController)
+        }
+        composable("resetPassword") {
+            ResetPasswordScreen(navController)
+        }
+        composable("passwordChanged") {
+            PasswordChangedScreen(navController)
+        }
+        composable("dailySteps") { navBackStackEntry ->
+            val navControllerEntry = remember(navBackStackEntry) {
+                navController.previousBackStackEntry
+            }
+
+            val savedStateHandle = navControllerEntry?.savedStateHandle
+
+            val nombre = savedStateHandle?.get<String>("nombre") ?: ""
+            val apellido = savedStateHandle?.get<String>("apellido") ?: ""
+            val email = savedStateHandle?.get<String>("email") ?: ""
+            val password = savedStateHandle?.get<String>("password") ?: ""
+
+            DailyStepsAssignment(
+                navController = navController,
+                nombre = nombre,
+                apellido = apellido,
+                email = email,
+                password = password
+            )
         }
     }
 }
-
