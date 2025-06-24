@@ -18,7 +18,9 @@ import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import dev.einfantesv.fitnesstracker.Screens.util.ActionButton
+import dev.einfantesv.fitnesstracker.Screens.util.AnimatedSnackbar
 import dev.einfantesv.fitnesstracker.Screens.util.Headers
+import kotlinx.coroutines.delay
 
 @Composable
 fun RegisterScreen(navController: NavHostController) {
@@ -30,6 +32,8 @@ fun RegisterScreen(navController: NavHostController) {
     var showPassword by remember { mutableStateOf(false) }
     var showConfirmPassword by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    var snackbarVisible by remember { mutableStateOf(false) }
+    var snackbarMessage by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -111,12 +115,17 @@ fun RegisterScreen(navController: NavHostController) {
             label = "Continuar",
             onClick = {
                 if (nombre.isBlank() || apellido.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
-                    Toast.makeText(context, "Completa todos los campos", Toast.LENGTH_SHORT).show()
+                    //Toast.makeText(context, "", Toast.LENGTH_SHORT).show()
+                    snackbarMessage = "Completa todos los campos"
+                    snackbarVisible = true
                     return@ActionButton
                 }
 
                 if (password != confirmPassword) {
-                    Toast.makeText(context, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show()
+                    //Toast.makeText(context, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show()
+
+                    snackbarMessage = "Las contraseñas no coinciden"
+                    snackbarVisible = true
                     return@ActionButton
                 }
 
@@ -127,8 +136,21 @@ fun RegisterScreen(navController: NavHostController) {
                     set("password", password)
                 }
 
+
                 navController.navigate("dailySteps")
             }
         )
+
+        AnimatedSnackbar(
+            visible = snackbarVisible,
+            message = snackbarMessage,
+            backgroundColor = Color(0xFFF44336)
+        )
+        if (snackbarVisible) {
+            LaunchedEffect(snackbarMessage) {
+                delay(2000)
+                snackbarVisible = false
+            }
+        }
     }
 }

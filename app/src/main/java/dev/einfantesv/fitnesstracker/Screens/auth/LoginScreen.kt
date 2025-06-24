@@ -172,7 +172,7 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.clickable {
                     navController.navigate("register") {
-                        popUpTo("login") { inclusive = true }
+                        launchSingleTop = true
                     }
                 }
             )
