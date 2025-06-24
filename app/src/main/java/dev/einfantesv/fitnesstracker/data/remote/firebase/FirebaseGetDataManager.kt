@@ -1,5 +1,6 @@
 package dev.einfantesv.fitnesstracker.data.remote.firebase
 
+import android.annotation.SuppressLint
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
@@ -8,6 +9,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import com.google.firebase.Timestamp
 import dev.einfantesv.fitnesstracker.StepCounterViewModel
+import dev.einfantesv.fitnesstracker.UserModel
 import java.time.Month
 import java.time.ZoneId
 import java.util.Date
@@ -15,6 +17,10 @@ import java.time.format.TextStyle
 import java.util.Calendar
 
 object FirebaseGetDataManager {
+
+    @SuppressLint("StaticFieldLeak")
+
+    private val firestore = FirebaseFirestore.getInstance()
 
     fun getAvatarUrls(onResult: (List<String>) -> Unit) {
         val db = FirebaseFirestore.getInstance()
@@ -121,6 +127,7 @@ object FirebaseGetDataManager {
             .get()
             .addOnSuccessListener { document ->
                 val goal = document.getLong("dailyGoal")?.toInt()
+
                 onResult(goal)
             }
             .addOnFailureListener {
@@ -188,4 +195,40 @@ object FirebaseGetDataManager {
             }
     }
 
+    fun getTopStepUsers(limit: Int = 3, onResult: (List<String>) -> Unit) {
+        FirebaseFirestore.getInstance()
+            .collection("Steps")
+            .orderBy("steps", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .limit(limit.toLong())
+            .get()
+            .addOnSuccessListener { result ->
+                val topUids = result.documents.mapNotNull { it.getString("uid") }
+                onResult(topUids)
+            }
+            .addOnFailureListener {
+                Log.e("FirebaseGetDataManager", "Error al obtener ranking: ${it.message}")
+                onResult(emptyList())
+            }
+    }
+
+    fun getUserByUid(uid: String, onResult: (UserModel?) -> Unit) {
+        FirebaseFirestore.getInstance()
+            .collection("User")
+            .document(uid)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    onResult(document.toObject(UserModel::class.java))
+                } else {
+                    onResult(null)
+                }
+            }
+            .addOnFailureListener {
+                Log.e("FirebaseGetDataManager", "Error al obtener usuario: ${it.message}")
+                onResult(null)
+            }
+    }
+
+
+}
 }

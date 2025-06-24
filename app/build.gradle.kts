@@ -72,5 +72,4 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx") //Fire
     implementation("com.google.firebase:firebase-storage") //Sotrage
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0") //Sync color system bar
-
 }

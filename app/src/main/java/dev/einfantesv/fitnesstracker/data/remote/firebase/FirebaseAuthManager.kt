@@ -1,20 +1,24 @@
 package dev.einfantesv.fitnesstracker.data.remote.firebase
 
+
 import android.annotation.SuppressLint
+
 import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+
 import java.util.Date
 import kotlinx.coroutines.tasks.await
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.Timestamp
 
+
 object FirebaseAuthManager {
 
     private val auth = FirebaseAuth.getInstance() //Almacena los datos necesarios para logearse
-    @SuppressLint("StaticFieldLeak")
+
     private val firestore = FirebaseFirestore.getInstance() //Almacena todos los datos que no son sensibles (contraseña)
 
     suspend fun registerUser(
@@ -23,11 +27,12 @@ object FirebaseAuthManager {
         email: String = "",
         password: String = "",
         dailyGoal: Int = 0
-    ) : Result<Unit> {
+    ): Result<Unit> {
         return try{
             val authResult = auth.createUserWithEmailAndPassword(email, password).await()
 
             val uid = authResult.user?.uid?: return Result.failure(Exception("No hay usuario"))
+
 
             // Obtener la fecha actual en formato TimeStamp
             val fechaCreacion = Timestamp(Date())
@@ -35,6 +40,7 @@ object FirebaseAuthManager {
             //Todos los campos que quiero guardar en Firebase
             val user = hashMapOf(
                 "uid" to uid,
+
                 "firstname" to firstname,
                 "lastname" to lastname,
                 "email" to email,
@@ -72,6 +78,7 @@ object FirebaseAuthManager {
 
     private suspend fun generarCodigoSeguro(): Int {
         var code: Int
+
         var exists: Boolean
 
         do {

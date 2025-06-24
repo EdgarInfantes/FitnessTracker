@@ -1,6 +1,5 @@
 package dev.einfantesv.fitnesstracker.Screens.auth
 
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -18,28 +17,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import androidx.navigation.NavHostController
-import dev.einfantesv.fitnesstracker.Screens.util.ActionButton
-import dev.einfantesv.fitnesstracker.UserSessionViewModel
-import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseAuthManager
-import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseAuthManager.loginUser
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import dev.einfantesv.fitnesstracker.R
+import dev.einfantesv.fitnesstracker.Screens.util.ActionButton
 import dev.einfantesv.fitnesstracker.Screens.util.AnimatedSnackbar
 import dev.einfantesv.fitnesstracker.Screens.util.Headers
+import dev.einfantesv.fitnesstracker.UserSessionViewModel
+import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseAuthManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSessionViewModel) {
@@ -54,7 +48,6 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
     var snackbarMessage by remember { mutableStateOf("") }
     var snackbarColor by remember { mutableStateOf(Color.Green) }
 
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -63,19 +56,16 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        //Texo Iniciar sesión
-        Headers("Iniciar Sesion")
-
+        Headers("Iniciar Sesión")
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Campo Email
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
             label = { Text("Correo electrónico") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth()
         )
 
         AnimatedVisibility(visible = emailError) {
@@ -91,7 +81,6 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Campo Password con boton para mostrar contraseña
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -103,15 +92,11 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
                 imeAction = ImeAction.Done
             ),
             trailingIcon = {
-                val image = if (showPassword)
-                    Icons.Default.Visibility
-                else
-                    Icons.Default.VisibilityOff
-
-                val description = if (showPassword) "Ocultar contraseña" else "Mostrar contraseña"
-
                 IconButton(onClick = { showPassword = !showPassword }) {
-                    Icon(imageVector = image, contentDescription = description)
+                    Icon(
+                        imageVector = if (showPassword) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        contentDescription = if (showPassword) "Ocultar contraseña" else "Mostrar contraseña"
+                    )
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -130,13 +115,12 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Olvidaste contraseña
         Text(
             text = "¿Olvidaste tu contraseña?",
             modifier = Modifier
                 .align(Alignment.End)
                 .clickable {
-                    navController.navigate("forgot_password")
+                    navController.navigate("forgotPassword")
                 },
             color = Color(0xFF7948DB),
             fontSize = 17.sp,
@@ -149,28 +133,35 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
             label = if (loading) "Iniciando sesión..." else "Iniciar sesión",
             onClick = {
                 loading = true
-                CoroutineScope(Dispatchers.Main).launch {
-                    val result = FirebaseAuthManager.loginUser(email, password)
-                    if (result.isSuccess) {
-                        snackbarMessage = "Bienvenido"
-                        snackbarColor = Color(0xFF4CAF50) // verde
-                        userSessionViewModel.loadUserData()
-                        navController.navigate("home") {
-                            popUpTo(0)
+                emailError = email.isBlank()
+                passwordError = password.isBlank()
+
+                if (!emailError && !passwordError) {
+                    CoroutineScope(Dispatchers.Main).launch {
+                        val result = FirebaseAuthManager.loginUser(email, password)
+                        if (result.isSuccess) {
+                            snackbarMessage = "Bienvenido"
+                            snackbarColor = Color(0xFF4CAF50)
+                            userSessionViewModel.loadUserData()
+                            navController.navigate("home") {
+                                popUpTo("login") { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        } else {
+                            loading = false
+                            snackbarMessage = "Datos incorrectos"
+                            snackbarColor = Color(0xFFF44336)
                         }
-                    }else{
-                        loading = false
-                        snackbarMessage = "Datos incorrectos"
-                        snackbarColor = Color(0xFFF44336)
+                        snackbarVisible = true
                     }
-                    snackbarVisible = true
+                } else {
+                    loading = false
                 }
             }
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Registro de usuario
         Row {
             Text(text = "¿No tienes cuenta?", fontSize = 16.sp)
             Spacer(modifier = Modifier.width(8.dp))
@@ -180,7 +171,9 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.clickable {
-                    navController.navigate("register")
+                    navController.navigate("register") {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -216,14 +209,13 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
                 )
             }
         }
-        // Usamos el SnackBar
+
         AnimatedSnackbar(
             visible = snackbarVisible,
             message = snackbarMessage,
             backgroundColor = snackbarColor
         )
 
-        //Cerramos el SnackBar
         LaunchedEffect(snackbarVisible) {
             if (snackbarVisible) {
                 delay(3000)

@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import dev.einfantesv.fitnesstracker.Screens.util.ActionButton
-import dev.einfantesv.fitnesstracker.Screens.util.Headers
 import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseAuthManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,7 +41,6 @@ fun DailyStepsAssignment(
         Pair("13000 pasos", "Ambicioso")
     )
     var selectedOption by remember { mutableStateOf<String?>(null) }
-    var selectedCustomGoal by remember { mutableStateOf("") }
     var customGoal by remember { mutableIntStateOf(6000) }
 
     Column(
@@ -64,9 +61,9 @@ fun DailyStepsAssignment(
         options.forEach { (cantidad, descripcion) ->
             val colorDescripcion = when (descripcion) {
                 "Promedio de 7 días" -> Color.Black
-                "Realista" -> Color(0xFF4CAF50)      // Verde
-                "Desafiante" -> Color(0xFFFFC107)    // Ámbar
-                "Ambicioso" -> Color(0xFFF44336)     // Rojo
+                "Realista" -> Color(0xFF4CAF50)
+                "Desafiante" -> Color(0xFFFFC107)
+                "Ambicioso" -> Color(0xFFF44336)
                 else -> Color.Gray
             }
 
@@ -112,18 +109,13 @@ fun DailyStepsAssignment(
                 )
                 .clickable {
                     selectedOption = "custom"
-                    // Guardamos el valor numérico
-                    selectedCustomGoal = customGoal.toString()
                 }
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = "Objetivo personalizado",
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold, color = Color.Black)
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -137,7 +129,6 @@ fun DailyStepsAssignment(
                     onClick = {
                         if (customGoal > 1000) customGoal -= 100
                         selectedOption = "custom"
-                        selectedCustomGoal = customGoal.toString()
                     },
                     colors = IconButtonDefaults.iconButtonColors(containerColor = Color(0xFFDDDDDD))
                 ) {
@@ -146,7 +137,7 @@ fun DailyStepsAssignment(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Default.DirectionsRun,
+                        imageVector = Icons.AutoMirrored.Filled.DirectionsRun,
                         contentDescription = "Zapatilla",
                         tint = Color.Gray
                     )
@@ -169,7 +160,6 @@ fun DailyStepsAssignment(
                     onClick = {
                         customGoal += 100
                         selectedOption = "custom"
-                        selectedCustomGoal = customGoal.toString()
                     },
                     colors = IconButtonDefaults.iconButtonColors(containerColor = Color(0xFFDDDDDD))
                 ) {
@@ -180,19 +170,19 @@ fun DailyStepsAssignment(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        //Botón de registar nuevo usuario
         ActionButton(
             label = "Registrarse",
             onClick = {
-                val dailyGoal = if (selectedOption == "custom") {
-                    selectedCustomGoal.toIntOrNull()
-                } else {
-                    selectedOption?.split(" ")?.get(0)?.toIntOrNull()
+                val dailyGoal = when (selectedOption) {
+                    "custom" -> customGoal
+                    else -> selectedOption?.split(" ")?.getOrNull(0)?.toIntOrNull()
                 }
+
                 if (dailyGoal == null) {
                     Toast.makeText(context, "Selecciona un objetivo", Toast.LENGTH_SHORT).show()
                     return@ActionButton
                 }
+
                 CoroutineScope(Dispatchers.Main).launch {
                     val result = FirebaseAuthManager.registerUser(
                         nombre.trim(),
@@ -203,7 +193,9 @@ fun DailyStepsAssignment(
                     )
 
                     if (result.isSuccess) {
-                        navController.navigate("login")
+                        navController.navigate("login") {
+                            popUpTo("dailySteps") { inclusive = true }
+                        }
                     } else {
                         val error = result.exceptionOrNull()?.message ?: "Error desconocido"
                         Toast.makeText(context, error, Toast.LENGTH_LONG).show()
