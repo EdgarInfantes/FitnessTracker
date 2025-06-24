@@ -76,14 +76,11 @@ fun ProfileScreen(
     var snackbarMessage by remember { mutableStateOf("") }
     var snackbarColor by remember { mutableStateOf(Color.Green) }
 
-
-
     val pickImageLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let { profileImageUri = it }
     }
-
 
     val requestGalleryPermission = rememberRequestMediaPermissions { granted ->
         if (granted) pickImageLauncher.launch("image/*")
@@ -112,8 +109,6 @@ fun ProfileScreen(
                 size = 130
             )
 
-
-
             IconButton(
                 onClick = { showImageOptions = true },
                 modifier = Modifier
@@ -130,7 +125,7 @@ fun ProfileScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-        ProfileOptionButton("Cambiar nombre") {}
+        ProfileOptionButton("Cambiar nombre y apellido") {}
         ProfileOptionButton("Cambiar contraseña") {}
         ProfileOptionButton("Cambiar correo") {}
         ProfileOptionButton("Cerrar sesión", R.drawable.baseline_logout_24, Color.Red) {
