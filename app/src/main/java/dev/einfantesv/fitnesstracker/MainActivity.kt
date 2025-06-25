@@ -18,7 +18,7 @@ import dev.einfantesv.fitnesstracker.Screens.util.SplashScreen
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
-
+    //no tocar
     private lateinit var stepCounterViewModel: StepCounterViewModel
     private lateinit var userSessionViewModel: UserSessionViewModel
 
