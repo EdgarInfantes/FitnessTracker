@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldPath
+import java.util.Calendar
 
 object FirebaseAwards {
 
@@ -84,5 +85,550 @@ object FirebaseAwards {
                     .addOnFailureListener { onResult(emptyList()) }
             }
             .addOnFailureListener { onResult(emptyList()) }
+    }
+
+    fun oneThousandStepsOneDay(onComplete: (Boolean) -> Unit) {
+        val currentUser = auth.currentUser ?: return onComplete(false)
+        val userUid = currentUser.uid
+
+        // ID del logro de "1000 pasos en un día"
+        val awardId = "2sJAcnf9bVGFX4rQi445"
+
+        // Paso 1: Verificar si el usuario ya desbloqueó este logro
+        firestore.collection("Detail_user_award")
+            .whereEqualTo("user_uid", userUid)
+            .whereEqualTo("award_uid", awardId)
+            .get()
+            .addOnSuccessListener { existingDocs ->
+                if (!existingDocs.isEmpty) {
+                    // Ya está desbloqueado
+                    return@addOnSuccessListener onComplete(true)
+                }
+
+                // Paso 2: Verificar si tiene algún documento con steps > 1000
+                firestore.collection("Steps")
+                    .whereEqualTo("uid", userUid)
+                    .get()
+                    .addOnSuccessListener { stepsDocs ->
+                        val hasQualified = stepsDocs.any { doc ->
+                            val steps = doc.getLong("steps") ?: 0
+                            steps > 1000
+                        }
+
+                        if (hasQualified) {
+                            // Paso 3: Desbloquear el logro creando un documento en Detail_user_award
+                            val data = mapOf(
+                                "user_uid" to userUid,
+                                "award_uid" to awardId
+                            )
+
+                            firestore.collection("Detail_user_award")
+                                .add(data)
+                                .addOnSuccessListener {
+                                    onComplete(true) // Éxito
+                                }
+                                .addOnFailureListener {
+                                    onComplete(false) // Fallo al guardar
+                                }
+                        } else {
+                            onComplete(false) // No califica aún
+                        }
+                    }
+                    .addOnFailureListener {
+                        onComplete(false)
+                    }
+            }
+            .addOnFailureListener {
+                onComplete(false)
+            }
+    }
+
+    fun surpassMensualGoal(onComplete: (Boolean) -> Unit) {
+        val currentUser = auth.currentUser ?: return onComplete(false)
+        val userUid = currentUser.uid
+        val awardId = "9NS35rn2GHnPmhWihlNP"
+
+        // Paso 1: Verificar si ya tiene el logro
+        firestore.collection("Detail_user_award")
+            .whereEqualTo("user_uid", userUid)
+            .whereEqualTo("award_uid", awardId)
+            .get()
+            .addOnSuccessListener { existingDocs ->
+                if (!existingDocs.isEmpty) {
+                    return@addOnSuccessListener onComplete(true)
+                }
+
+                // Paso 2: Obtener la meta diaria
+                firestore.collection("User")
+                    .document(userUid)
+                    .get()
+                    .addOnSuccessListener { userDoc ->
+                        val dailyGoal = userDoc.getLong("dailyGoal")?.toInt() ?: return@addOnSuccessListener onComplete(false)
+                        val monthlyGoal = dailyGoal * 30
+
+                        // Paso 3: Obtener documentos de pasos
+                        firestore.collection("Steps")
+                            .whereEqualTo("uid", userUid)
+                            .get()
+                            .addOnSuccessListener { stepsDocs ->
+                                // Agrupar pasos por mes (Map<"YYYY-MM", totalSteps>)
+                                val monthlySteps = mutableMapOf<String, Int>()
+
+                                for (doc in stepsDocs) {
+                                    val timestamp = doc.getTimestamp("timestamp")?.toDate() ?: continue
+                                    val steps = doc.getLong("steps")?.toInt() ?: 0
+
+                                    @SuppressLint("SimpleDateFormat")
+                                    val key = java.text.SimpleDateFormat("yyyy-MM").format(timestamp)
+
+                                    monthlySteps[key] = (monthlySteps[key] ?: 0) + steps
+                                }
+
+                                // Verificar si supera meta mensual en algún mes
+                                val qualifies = monthlySteps.values.any { total -> total > monthlyGoal }
+
+                                if (qualifies) {
+                                    // Paso 4: Desbloquear logro
+                                    val data = mapOf(
+                                        "user_uid" to userUid,
+                                        "award_uid" to awardId
+                                    )
+
+                                    firestore.collection("Detail_user_award")
+                                        .add(data)
+                                        .addOnSuccessListener {
+                                            onComplete(true)
+                                        }
+                                        .addOnFailureListener {
+                                            onComplete(false)
+                                        }
+                                } else {
+                                    onComplete(false)
+                                }
+                            }
+                            .addOnFailureListener { onComplete(false) }
+                    }
+                    .addOnFailureListener { onComplete(false) }
+            }
+            .addOnFailureListener { onComplete(false) }
+    }
+
+    fun surpassDailyGoal(onComplete: (Boolean) -> Unit) {
+        val currentUser = auth.currentUser ?: return onComplete(false)
+        val userUid = currentUser.uid
+        val awardId = "GcMxxD2cfYFwdJTE6LKL"
+
+        // Paso 1: Verificar si ya tiene el logro
+        firestore.collection("Detail_user_award")
+            .whereEqualTo("user_uid", userUid)
+            .whereEqualTo("award_uid", awardId)
+            .get()
+            .addOnSuccessListener { existingDocs ->
+                if (!existingDocs.isEmpty) {
+                    return@addOnSuccessListener onComplete(true)
+                }
+
+                // Paso 2: Obtener la meta diaria del usuario
+                firestore.collection("User")
+                    .document(userUid)
+                    .get()
+                    .addOnSuccessListener { userDoc ->
+                        val dailyGoal = userDoc.getLong("dailyGoal")?.toInt() ?: return@addOnSuccessListener onComplete(false)
+
+                        // Paso 3: Revisar documentos de Steps
+                        firestore.collection("Steps")
+                            .whereEqualTo("uid", userUid)
+                            .get()
+                            .addOnSuccessListener { stepsDocs ->
+                                val qualifies = stepsDocs.any { doc ->
+                                    val steps = doc.getLong("steps")?.toInt() ?: 0
+                                    steps >= dailyGoal
+                                }
+
+                                if (qualifies) {
+                                    // Paso 4: Desbloquear logro
+                                    val data = mapOf(
+                                        "user_uid" to userUid,
+                                        "award_uid" to awardId
+                                    )
+
+                                    firestore.collection("Detail_user_award")
+                                        .add(data)
+                                        .addOnSuccessListener {
+                                            onComplete(true)
+                                        }
+                                        .addOnFailureListener {
+                                            onComplete(false)
+                                        }
+                                } else {
+                                    onComplete(false)
+                                }
+                            }
+                            .addOnFailureListener { onComplete(false) }
+                    }
+                    .addOnFailureListener { onComplete(false) }
+            }
+            .addOnFailureListener { onComplete(false) }
+    }
+
+    fun oneHundredMillionSteps(onComplete: (Boolean) -> Unit) {
+        val currentUser = auth.currentUser ?: return onComplete(false)
+        val userUid = currentUser.uid
+        val awardId = "J0QH1YMsW514ssMQRmRc"
+
+        // Paso 1: Verificar si ya tiene el logro
+        firestore.collection("Detail_user_award")
+            .whereEqualTo("user_uid", userUid)
+            .whereEqualTo("award_uid", awardId)
+            .get()
+            .addOnSuccessListener { existingDocs ->
+                if (!existingDocs.isEmpty) {
+                    return@addOnSuccessListener onComplete(true)
+                }
+
+                // Paso 2: Obtener todos los pasos del usuario
+                firestore.collection("Steps")
+                    .whereEqualTo("uid", userUid)
+                    .get()
+                    .addOnSuccessListener { stepsDocs ->
+                        val totalSteps = stepsDocs.sumOf { doc ->
+                            doc.getLong("steps")?.toLong() ?: 0L
+                        }
+
+                        if (totalSteps > 100_000_000L) {
+                            // Paso 3: Desbloquear el logro
+                            val data = mapOf(
+                                "user_uid" to userUid,
+                                "award_uid" to awardId
+                            )
+
+                            firestore.collection("Detail_user_award")
+                                .add(data)
+                                .addOnSuccessListener {
+                                    onComplete(true)
+                                }
+                                .addOnFailureListener {
+                                    onComplete(false)
+                                }
+                        } else {
+                            onComplete(false)
+                        }
+                    }
+                    .addOnFailureListener { onComplete(false) }
+            }
+            .addOnFailureListener { onComplete(false) }
+    }
+
+    fun fiveHundredStepsOneDay(onComplete: (Boolean) -> Unit) {
+        val currentUser = auth.currentUser ?: return onComplete(false)
+        val userUid = currentUser.uid
+
+        // ID del logro de "500 pasos en un día"
+        val awardId = "SXjZeeFT6vqVjvGlBBij"
+
+        // Paso 1: Verificar si el usuario ya desbloqueó este logro
+        firestore.collection("Detail_user_award")
+            .whereEqualTo("user_uid", userUid)
+            .whereEqualTo("award_uid", awardId)
+            .get()
+            .addOnSuccessListener { existingDocs ->
+                if (!existingDocs.isEmpty) {
+                    // Ya está desbloqueado
+                    return@addOnSuccessListener onComplete(true)
+                }
+
+                // Paso 2: Verificar si tiene algún documento con steps > 500
+                firestore.collection("Steps")
+                    .whereEqualTo("uid", userUid)
+                    .get()
+                    .addOnSuccessListener { stepsDocs ->
+                        val hasQualified = stepsDocs.any { doc ->
+                            val steps = doc.getLong("steps") ?: 0
+                            steps > 500
+                        }
+
+                        if (hasQualified) {
+                            // Paso 3: Desbloquear el logro creando un documento en Detail_user_award
+                            val data = mapOf(
+                                "user_uid" to userUid,
+                                "award_uid" to awardId
+                            )
+
+                            firestore.collection("Detail_user_award")
+                                .add(data)
+                                .addOnSuccessListener {
+                                    onComplete(true) // Éxito
+                                }
+                                .addOnFailureListener {
+                                    onComplete(false) // Fallo al guardar
+                                }
+                        } else {
+                            onComplete(false) // No califica aún
+                        }
+                    }
+                    .addOnFailureListener {
+                        onComplete(false)
+                    }
+            }
+            .addOnFailureListener {
+                onComplete(false)
+            }
+    }
+
+    fun tenThousandStepsOneWeek(onComplete: (Boolean) -> Unit) {
+        val currentUser = auth.currentUser ?: return onComplete(false)
+        val userUid = currentUser.uid
+        val awardId = "VUemz67iT7QNGx1QtAXG"
+
+        // Verifica si ya tiene el logro
+        firestore.collection("Detail_user_award")
+            .whereEqualTo("user_uid", userUid)
+            .whereEqualTo("award_uid", awardId)
+            .get()
+            .addOnSuccessListener { existingDocs ->
+                if (!existingDocs.isEmpty) {
+                    return@addOnSuccessListener onComplete(true)
+                }
+
+                // Obtener los documentos de pasos
+                firestore.collection("Steps")
+                    .whereEqualTo("uid", userUid)
+                    .get()
+                    .addOnSuccessListener { stepsDocs ->
+                        val weeklySteps = mutableMapOf<String, Long>()
+
+                        for (doc in stepsDocs) {
+                            val timestamp = doc.getTimestamp("timestamp") ?: continue
+                            val calendar = Calendar.getInstance().apply {
+                                time = timestamp.toDate()
+                            }
+
+                            // Año y número de semana como clave (por ejemplo: "2025-24")
+                            val week = calendar.get(Calendar.WEEK_OF_YEAR)
+                            val year = calendar.get(Calendar.YEAR)
+                            val weekKey = "$year-$week"
+
+                            val steps = doc.getLong("steps") ?: 0L
+                            weeklySteps[weekKey] = weeklySteps.getOrDefault(weekKey, 0L) + steps
+                        }
+
+                        val unlocked = weeklySteps.values.any { it >= 10_000L }
+
+                        if (unlocked) {
+                            val data = mapOf(
+                                "user_uid" to userUid,
+                                "award_uid" to awardId
+                            )
+
+                            firestore.collection("Detail_user_award")
+                                .add(data)
+                                .addOnSuccessListener {
+                                    onComplete(true)
+                                }
+                                .addOnFailureListener {
+                                    onComplete(false)
+                                }
+                        } else {
+                            onComplete(false)
+                        }
+                    }
+                    .addOnFailureListener { onComplete(false) }
+            }
+            .addOnFailureListener { onComplete(false) }
+    }
+
+    fun oneHundredStepsOneDay(onComplete: (Boolean) -> Unit) {
+        val currentUser = auth.currentUser ?: return onComplete(false)
+        val userUid = currentUser.uid
+
+        // ID del logro de "100 pasos en un día"
+        val awardId = "tCovRTyD6f9wPCRdAgzA"
+
+        // Paso 1: Verificar si el usuario ya desbloqueó este logro
+        firestore.collection("Detail_user_award")
+            .whereEqualTo("user_uid", userUid)
+            .whereEqualTo("award_uid", awardId)
+            .get()
+            .addOnSuccessListener { existingDocs ->
+                if (!existingDocs.isEmpty) {
+                    // Ya está desbloqueado
+                    return@addOnSuccessListener onComplete(true)
+                }
+
+                // Paso 2: Verificar si tiene algún documento con steps > 100
+                firestore.collection("Steps")
+                    .whereEqualTo("uid", userUid)
+                    .get()
+                    .addOnSuccessListener { stepsDocs ->
+                        val hasQualified = stepsDocs.any { doc ->
+                            val steps = doc.getLong("steps") ?: 0
+                            steps > 100
+                        }
+
+                        if (hasQualified) {
+                            // Paso 3: Desbloquear el logro creando un documento en Detail_user_award
+                            val data = mapOf(
+                                "user_uid" to userUid,
+                                "award_uid" to awardId
+                            )
+
+                            firestore.collection("Detail_user_award")
+                                .add(data)
+                                .addOnSuccessListener {
+                                    onComplete(true) // Éxito
+                                }
+                                .addOnFailureListener {
+                                    onComplete(false) // Fallo al guardar
+                                }
+                        } else {
+                            onComplete(false) // No califica aún
+                        }
+                    }
+                    .addOnFailureListener {
+                        onComplete(false)
+                    }
+            }
+            .addOnFailureListener {
+                onComplete(false)
+            }
+    }
+
+    fun oneMillionStepsInAMonth(onComplete: (Boolean) -> Unit) {
+        val currentUser = auth.currentUser ?: return onComplete(false)
+        val userUid = currentUser.uid
+        val awardId = "uxItpKHs9vINBZ6Y2lrq"
+
+        // Verifica si ya tiene el logro
+        firestore.collection("Detail_user_award")
+            .whereEqualTo("user_uid", userUid)
+            .whereEqualTo("award_uid", awardId)
+            .get()
+            .addOnSuccessListener { existingDocs ->
+                if (!existingDocs.isEmpty) {
+                    return@addOnSuccessListener onComplete(true)
+                }
+
+                // Obtener documentos de Steps
+                firestore.collection("Steps")
+                    .whereEqualTo("uid", userUid)
+                    .get()
+                    .addOnSuccessListener { stepsDocs ->
+                        val monthlySteps = mutableMapOf<String, Long>()
+
+                        for (doc in stepsDocs) {
+                            val timestamp = doc.getTimestamp("timestamp") ?: continue
+                            val calendar = Calendar.getInstance().apply {
+                                time = timestamp.toDate()
+                            }
+
+                            // Clave: año-mes (por ejemplo: "2025-06")
+                            val year = calendar.get(Calendar.YEAR)
+                            val month = calendar.get(Calendar.MONTH) + 1 // Calendar.MONTH es base 0
+                            val monthKey = String.format("%04d-%02d", year, month)
+
+                            val steps = doc.getLong("steps") ?: 0L
+                            monthlySteps[monthKey] = monthlySteps.getOrDefault(monthKey, 0L) + steps
+                        }
+
+                        val unlocked = monthlySteps.values.any { it >= 1_000_000L }
+
+                        if (unlocked) {
+                            val data = mapOf(
+                                "user_uid" to userUid,
+                                "award_uid" to awardId
+                            )
+
+                            firestore.collection("Detail_user_award")
+                                .add(data)
+                                .addOnSuccessListener {
+                                    onComplete(true)
+                                }
+                                .addOnFailureListener {
+                                    onComplete(false)
+                                }
+                        } else {
+                            onComplete(false)
+                        }
+                    }
+                    .addOnFailureListener { onComplete(false) }
+            }
+            .addOnFailureListener { onComplete(false) }
+    }
+
+    fun dailyGoalFiveDaysInARow(onComplete: (Boolean) -> Unit) {
+        val currentUser = auth.currentUser ?: return onComplete(false)
+        val userUid = currentUser.uid
+        val awardId = "xNdeYeoPh6HyaKn1KXeE"
+
+        // Verifica si ya tiene el logro
+        firestore.collection("Detail_user_award")
+            .whereEqualTo("user_uid", userUid)
+            .whereEqualTo("award_uid", awardId)
+            .get()
+            .addOnSuccessListener { existingDocs ->
+                if (!existingDocs.isEmpty) {
+                    return@addOnSuccessListener onComplete(true)
+                }
+
+                // Obtener dailyGoal del usuario
+                firestore.collection("User")
+                    .document(userUid)
+                    .get()
+                    .addOnSuccessListener { userDoc ->
+                        val dailyGoal = userDoc.getLong("dailyGoal") ?: return@addOnSuccessListener onComplete(false)
+
+                        // Obtener los pasos del usuario
+                        firestore.collection("Steps")
+                            .whereEqualTo("uid", userUid)
+                            .get()
+                            .addOnSuccessListener { stepsDocs ->
+                                val validDates = stepsDocs.documents
+                                    .mapNotNull { doc ->
+                                        val timestamp = doc.getTimestamp("timestamp") ?: return@mapNotNull null
+                                        val steps = doc.getLong("steps") ?: return@mapNotNull null
+                                        if (steps >= dailyGoal) {
+                                            val calendar = Calendar.getInstance().apply {
+                                                time = timestamp.toDate()
+                                                set(Calendar.HOUR_OF_DAY, 0)
+                                                set(Calendar.MINUTE, 0)
+                                                set(Calendar.SECOND, 0)
+                                                set(Calendar.MILLISECOND, 0)
+                                            }
+                                            calendar.timeInMillis
+                                        } else null
+                                    }
+                                    .distinct()
+                                    .sorted()
+
+                                // Buscar al menos 5 días consecutivos
+                                var streak = 1
+                                for (i in 1 until validDates.size) {
+                                    val diff = validDates[i] - validDates[i - 1]
+                                    if (diff == 86_400_000L) { // 1 día en milisegundos
+                                        streak++
+                                        if (streak >= 5) break
+                                    } else {
+                                        streak = 1
+                                    }
+                                }
+
+                                if (streak >= 5) {
+                                    val data = mapOf(
+                                        "user_uid" to userUid,
+                                        "award_uid" to awardId
+                                    )
+                                    firestore.collection("Detail_user_award")
+                                        .add(data)
+                                        .addOnSuccessListener { onComplete(true) }
+                                        .addOnFailureListener { onComplete(false) }
+                                } else {
+                                    onComplete(false)
+                                }
+                            }
+                            .addOnFailureListener { onComplete(false) }
+                    }
+                    .addOnFailureListener { onComplete(false) }
+            }
+            .addOnFailureListener { onComplete(false) }
     }
 }
