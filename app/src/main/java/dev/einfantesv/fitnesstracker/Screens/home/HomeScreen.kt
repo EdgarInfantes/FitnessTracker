@@ -45,6 +45,7 @@ import dev.einfantesv.fitnesstracker.UserModel
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
 import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseGetDataManager
 import kotlinx.coroutines.delay
+import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseAwards
 
 @Composable
 fun HomeScreen(
@@ -145,13 +146,13 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(50.dp))
         
-        RankingAndAwardsSection()
+        RankingAndAwardsSection(uid)
 
     }
 }
 
 @Composable
-fun RankingAndAwardsSection() {
+fun RankingAndAwardsSection(uid: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -173,11 +174,10 @@ fun RankingAndAwardsSection() {
                 .padding(start = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            awards("id")
+            awards(uid)
         }
     }
 }
-
 
 @Composable
 fun rankingToday(
@@ -272,31 +272,50 @@ fun RankingItem(name: String, imageUrl: String?, placeIcon: Int?) {
 }
 
 @Composable
-fun awards(uid: String){
-    Headers(label = "Premios", color = Color(0xFF7948DB))
+fun awards(uid: String) {
+    var userAwards by remember { mutableStateOf<List<FirebaseAwards.Award>>(emptyList()) }
 
-    Spacer(modifier = Modifier.height(8.dp))
-
-    // Seccion de premios
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-
+    LaunchedEffect(uid) {
+        FirebaseAwards.getUnlockedAwardsForUser(uid) { awards ->
+            userAwards = awards.take(4) // solo mostrar máximo 4
+        }
     }
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Headers(label = "Premios", color = Color(0xFF7948DB))
+    Spacer(modifier = Modifier.height(8.dp))
 
-    // Botón de inventario
-    Text(
-        text = "-> Go and check your inventory",
-        color = Color.Red,
-        fontSize = 14.sp,
-        modifier = Modifier
-            .padding(8.dp)
-            .background(Color.White, shape = RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        fontWeight = FontWeight.Medium
-    )
+    val columns = 2
+    val imageSize = 70.dp
+
+    // Grid manual (2 columnas, hasta 4 premios)
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        for (row in userAwards.chunked(columns)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+            ) {
+                row.forEach { award ->
+                    AsyncImage(
+                        model = award.url,
+                        contentDescription = "Premio desbloqueado",
+                        modifier = Modifier
+                            .size(imageSize)
+                            .clip(RoundedCornerShape(12.dp))
+                    )
+                }
+
+                // Si hay menos de 2 en la fila, rellenar para mantener el layout uniforme
+                repeat(columns - row.size) {
+                    Spacer(modifier = Modifier.size(imageSize))
+                }
+            }
+        }
+    }
 }
 
 @Composable

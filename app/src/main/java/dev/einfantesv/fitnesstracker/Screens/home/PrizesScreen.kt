@@ -22,6 +22,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -36,7 +38,7 @@ fun PrizesScreen(navController: NavHostController) {
     var awards by remember { mutableStateOf<List<FirebaseAwards.Award>>(emptyList()) }
 
     LaunchedEffect(true) {
-        FirebaseAwards.getAwards {
+        FirebaseAwards.getAwardsWithUnlockStatus {
             awards = it
         }
     }
@@ -71,13 +73,23 @@ fun PrizesScreen(navController: NavHostController) {
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val imagePainter = rememberAsyncImagePainter(award.url)
+
+                    // Imagen desaturada si no ha sido desbloqueado
+                    val imageModifier = Modifier
+                        .size(64.dp)
+                        .padding(end = 16.dp)
+
                     Image(
-                        painter = rememberAsyncImagePainter(award.url),
+                        painter = imagePainter,
                         contentDescription = "Imagen del logro",
-                        modifier = Modifier
-                            .size(64.dp)
-                            .padding(end = 16.dp),
-                        contentScale = ContentScale.Crop
+                        modifier = imageModifier,
+                        contentScale = ContentScale.Crop,
+                        colorFilter = if (!award.unlocked) {
+                            ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+                        } else {
+                            null
+                        }
                     )
 
                     Text(
