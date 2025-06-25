@@ -45,6 +45,7 @@ import dev.einfantesv.fitnesstracker.UserModel
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
 import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseGetDataManager
 import kotlinx.coroutines.delay
+import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseAwards
 
 @Composable
 fun HomeScreen(
@@ -72,6 +73,60 @@ fun HomeScreen(
     LaunchedEffect(uid) {
         uid.let {
             stepCounterViewModel.onUserLogin(it)
+        }
+
+        FirebaseAwards.oneThousandStepsOneDay { unlocked ->
+            if (unlocked) {
+                println("Logro de 1000 pasos desbloqueado")
+            }
+        }
+
+        FirebaseAwards.surpassMensualGoal { unlocked ->
+            if (unlocked) {
+                println("Meta mensual desbloqueada")
+            }
+        }
+
+        FirebaseAwards.surpassDailyGoal { unlocked ->
+            if (unlocked) {
+                println("Meta diaria desbloqueada")
+            }
+        }
+
+        FirebaseAwards.oneHundredMillionSteps { unlocked ->
+            if (unlocked) {
+                println("Logro de 100 millones de pasos desbloqueado")
+            }
+        }
+
+        FirebaseAwards.fiveHundredStepsOneDay { unlocked ->
+            if (unlocked) {
+                println("Logro de 500 pasos desbloqueado")
+            }
+        }
+
+        FirebaseAwards.tenThousandStepsOneWeek { unlocked ->
+            if (unlocked) {
+                println("Logro de 10000 pasos desbloqueado")
+            }
+        }
+
+        FirebaseAwards.oneHundredStepsOneDay { unlocked ->
+            if (unlocked) {
+                println("Logro de 100 pasos desbloqueado")
+            }
+        }
+
+        FirebaseAwards.oneMillionStepsInAMonth { unlocked ->
+            if (unlocked) {
+                println("Logro de 1 millón de pasos desbloqueado")
+            }
+        }
+
+        FirebaseAwards.dailyGoalFiveDaysInARow { unlocked ->
+            if (unlocked) {
+                println("Logro de meta diaría 5 días seguidos desbloqueado")
+            }
         }
     }
 
@@ -145,13 +200,13 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(50.dp))
         
-        RankingAndAwardsSection()
+        RankingAndAwardsSection(uid)
 
     }
 }
 
 @Composable
-fun RankingAndAwardsSection() {
+fun RankingAndAwardsSection(uid: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -173,11 +228,10 @@ fun RankingAndAwardsSection() {
                 .padding(start = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            awards("id")
+            awards(uid)
         }
     }
 }
-
 
 @Composable
 fun rankingToday(
@@ -272,31 +326,60 @@ fun RankingItem(name: String, imageUrl: String?, placeIcon: Int?) {
 }
 
 @Composable
-fun awards(uid: String){
-    Headers(label = "Premios", color = Color(0xFF7948DB))
+fun awards(uid: String) {
+    var userAwards by remember { mutableStateOf<List<FirebaseAwards.Award>>(emptyList()) }
 
-    Spacer(modifier = Modifier.height(8.dp))
-
-    // Seccion de premios
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-
+    LaunchedEffect(uid) {
+        FirebaseAwards.getUnlockedAwardsForUser(uid) { awards ->
+            userAwards = awards.take(4) // solo mostrar máximo 4
+        }
     }
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Headers(label = "Premios", color = Color(0xFF7948DB))
+    Spacer(modifier = Modifier.height(8.dp))
 
-    // Botón de inventario
-    Text(
-        text = "-> Go and check your inventory",
-        color = Color.Red,
-        fontSize = 14.sp,
-        modifier = Modifier
-            .padding(8.dp)
-            .background(Color.White, shape = RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        fontWeight = FontWeight.Medium
-    )
+    val columns = 2
+    val imageSize = 70.dp
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        for (row in userAwards.chunked(columns)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp)
+            ) {
+                row.forEach { award ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            model = award.url,
+                            contentDescription = "Premio desbloqueado",
+                            modifier = Modifier
+                                .size(imageSize)
+                                .clip(RoundedCornerShape(12.dp))
+                        )
+                    }
+                }
+
+                // Rellenar columnas vacías para mantener la uniformidad
+                repeat(columns - row.size) {
+                    Spacer(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(1f)
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
