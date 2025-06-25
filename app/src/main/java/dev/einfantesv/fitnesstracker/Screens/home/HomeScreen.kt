@@ -135,7 +135,12 @@ fun HomeScreen(
         if (granted) stepCounterViewModel.startListening() else stepCounterViewModel.stopListening()
     }
 
-    LaunchedEffect(Unit) { requestPermission() }
+    LaunchedEffect(Unit) {
+        if (userSessionViewModel.userData.value == null) {
+            userSessionViewModel.loadUserData()
+        }
+        requestPermission()
+    }
 
     LaunchedEffect(hasPermission) {
         if (hasPermission) {
