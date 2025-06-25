@@ -28,19 +28,20 @@ object FirebaseAuthManager {
         password: String = "",
         dailyGoal: Int = 0
     ): Result<Unit> {
-        return try{
-            val authResult = auth.createUserWithEmailAndPassword(email, password).await()
+        return try {
+            val uid: String = if (auth.currentUser != null) {
+                // Ya está logueado (probablemente con Google)
+                auth.currentUser!!.uid
+            } else {
+                // Registro manual con email y contraseña
+                val authResult = auth.createUserWithEmailAndPassword(email, password).await()
+                authResult.user?.uid ?: return Result.failure(Exception("No se pudo crear el usuario"))
+            }
 
-            val uid = authResult.user?.uid?: return Result.failure(Exception("No hay usuario"))
-
-
-            // Obtener la fecha actual en formato TimeStamp
             val fechaCreacion = Timestamp(Date())
 
-            //Todos los campos que quiero guardar en Firebase
             val user = hashMapOf(
                 "uid" to uid,
-
                 "firstname" to firstname,
                 "lastname" to lastname,
                 "email" to email,
@@ -55,10 +56,10 @@ object FirebaseAuthManager {
                 .document(uid)
                 .set(user)
                 .await()
+
             Result.success(Unit)
 
-
-        } catch (e: Exception){
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }

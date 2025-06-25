@@ -65,5 +65,18 @@ fun NavigationWrapper(
                 password = password
             )
         }
+        composable("dailyStepsGoogle/{nombre}/{apellido}/{email}") { backStackEntry ->
+            val nombre = backStackEntry.arguments?.getString("nombre") ?: ""
+            val apellido = backStackEntry.arguments?.getString("apellido") ?: ""
+            val email = backStackEntry.arguments?.getString("email") ?: ""
+
+            DailyStepsAssignment(
+                navController = navController,
+                nombre = nombre,
+                apellido = apellido,
+                email = email,
+                password = "" // ya no se necesita
+            )
+        }
     }
 }
