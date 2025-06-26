@@ -15,6 +15,7 @@ import dev.einfantesv.fitnesstracker.StepCounterViewModel
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
 import dev.einfantesv.fitnesstracker.Screens.auth.RegisterScreen
 import dev.einfantesv.fitnesstracker.Screens.hidden.UserFriendCodeScreen
+import dev.einfantesv.fitnesstracker.Screens.hidden.UserFullNameScreen
 
 @Composable
 fun NavigationWrapper(
@@ -82,5 +83,9 @@ fun NavigationWrapper(
         composable("userFriendCode") {
             UserFriendCodeScreen(navController)
         }
+        composable("userFullName") {
+            UserFullNameScreen(navController, userSessionViewModel)
+        }
+
     }
 }

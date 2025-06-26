@@ -63,9 +63,10 @@ object FirebaseGetDataManager {
                 for (i in 1..7) {
                     val date = sevenDaysAgo.plusDays(i.toLong())
                     val key = date.toString()
-                    val dayName = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale("es"))
-                    val formattedDate = "${dayName.lowercase()}, ${date.format(DateTimeFormatter.ofPattern("dd/MM"))}"
-                    labelsList.add(formattedDate)
+                    val dias = listOf("L", "M", "X", "J", "V", "S", "D")
+                    val dayLetter = dias[date.dayOfWeek.value % 7]
+                    val formattedLabel = "$dayLetter, ${date.dayOfMonth}"
+                    labelsList.add(formattedLabel)
 
                     stepsList.add(grouped[key]?.toFloat() ?: 0f)
                 }
@@ -107,7 +108,7 @@ object FirebaseGetDataManager {
                 // Generar listas ordenadas
                 val months = (0..6).map { now.minusMonths(it.toLong()).monthValue }.reversed()
                 val monthLabels = months.map {
-                    Month.of(it).getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                    Month.of(it).getDisplayName(TextStyle.SHORT, Locale("es")).replaceFirstChar { it.uppercase() }
                 }
                 val stepValues = months.map { stepsByMonth[it]?.toFloat() ?: 0f }
 
@@ -223,26 +224,8 @@ object FirebaseGetDataManager {
             }
     }
 
-
-    fun getTopStepUsers(limit: Int = 3, onResult: (List<String>) -> Unit) {
-        FirebaseFirestore.getInstance()
-            .collection("Steps")
-            .orderBy("steps", com.google.firebase.firestore.Query.Direction.DESCENDING)
-            .limit(limit.toLong())
-            .get()
-            .addOnSuccessListener { result ->
-                val topUids = result.documents.mapNotNull { it.getString("uid") }
-                onResult(topUids)
-            }
-            .addOnFailureListener {
-                Log.e("FirebaseGetDataManager", "Error al obtener ranking: ${it.message}")
-                onResult(emptyList())
-            }
-    }
-
     fun getUserByUid(uid: String, onResult: (UserModel?) -> Unit) {
-        FirebaseFirestore.getInstance()
-            .collection("User")
+        firestore.collection("User")
             .document(uid)
             .get()
             .addOnSuccessListener { document ->
@@ -253,8 +236,75 @@ object FirebaseGetDataManager {
                 }
             }
             .addOnFailureListener {
-                Log.e("FirebaseGetDataManager", "Error al obtener usuario: ${it.message}")
+                Log.e("FirebaseGetDataManager", "Error al obtener usuario: \${it.message}")
                 onResult(null)
+            }
+    }
+
+    fun getUserFriends(uid: String, onResult: (List<String>) -> Unit) {
+        firestore.collection("Friend_relation")
+            .whereEqualTo("uid_one", uid)
+            .get()
+            .addOnSuccessListener { resultOne ->
+                firestore.collection("Friend_relation")
+                    .whereEqualTo("uid_second", uid)
+                    .get()
+                    .addOnSuccessListener { resultTwo ->
+                        val friendUids = mutableSetOf<String>()
+
+                        for (doc in resultOne.documents + resultTwo.documents) {
+                            val state = doc.getBoolean("state") ?: false
+                            if (state) {
+                                val uidOne = doc.getString("uid_one") ?: continue
+                                val uidSecond = doc.getString("uid_second") ?: continue
+                                val friendUid = if (uidOne == uid) uidSecond else uidOne
+                                friendUids.add(friendUid)
+                            }
+                        }
+
+                        friendUids.add(uid) // Incluir al usuario actual
+                        onResult(friendUids.toList())
+                    }
+                    .addOnFailureListener {
+                        onResult(listOf(uid))
+                    }
+            }
+            .addOnFailureListener {
+                onResult(listOf(uid))
+            }
+    }
+
+    fun getStepCountsForUids(uids: List<String>, onResult: (Map<String, Int>) -> Unit) {
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val todayTimestamp = Timestamp(calendar.time)
+
+        firestore.collection("Steps")
+            .whereEqualTo("timestamp", todayTimestamp)
+            .get()
+            .addOnSuccessListener { documents ->
+                val stepsMap = mutableMapOf<String, Int>()
+
+                // Inicializar todos con 0
+                uids.forEach { stepsMap[it] = 0 }
+
+                for (doc in documents) {
+                    val uid = doc.getString("uid") ?: continue
+                    val steps = doc.getLong("steps")?.toInt() ?: 0
+                    if (uid in stepsMap) {
+                        stepsMap[uid] = steps
+                    }
+                }
+
+                onResult(stepsMap)
+            }
+            .addOnFailureListener {
+                val zeroMap = uids.associateWith { 0 }
+                onResult(zeroMap)
             }
     }
 }

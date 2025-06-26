@@ -81,7 +81,7 @@ fun UserFriendCodeScreen(navController: NavHostController) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = friendCode,
-                fontSize = 28.sp,
+                fontSize = 35.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(end = 8.dp)
             )
@@ -156,6 +156,7 @@ fun UserFriendCodeScreen(navController: NavHostController) {
                                     } else {
                                         // Paso 3: Crear relación
                                         val relation = hashMapOf(
+                                            "state" to true,
                                             "uid_one" to currentUid,
                                             "uid_second" to otherUid
                                         )

@@ -101,4 +101,31 @@ object FirebaseUserManager {
     }
 
     // Puedes agregar más funciones aquí: actualización de código de amigo, fecha de registro, etc.
+
+    fun updateFriendRelationStates(uid: String, newState: Boolean, onComplete: (Boolean) -> Unit) {
+        val firestore = FirebaseFirestore.getInstance()
+
+        val collection = firestore.collection("Friend_relation")
+        val tasks = mutableListOf<com.google.android.gms.tasks.Task<Void>>()
+
+        // Buscar como uid_one
+        collection.whereEqualTo("uid_one", uid).get().addOnSuccessListener { docsOne ->
+            for (doc in docsOne) {
+                tasks.add(doc.reference.update("state", newState))
+            }
+
+            // Buscar como uid_second
+            collection.whereEqualTo("uid_second", uid).get().addOnSuccessListener { docsTwo ->
+                for (doc in docsTwo) {
+                    tasks.add(doc.reference.update("state", newState))
+                }
+
+                // Esperar que todos terminen
+                com.google.android.gms.tasks.Tasks.whenAllComplete(tasks)
+                    .addOnSuccessListener { onComplete(true) }
+                    .addOnFailureListener { onComplete(false) }
+            }.addOnFailureListener { onComplete(false) }
+
+        }.addOnFailureListener { onComplete(false) }
+    }
 }

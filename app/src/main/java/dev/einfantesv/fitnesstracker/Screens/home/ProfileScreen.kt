@@ -65,6 +65,9 @@ fun ProfileScreen(
     var snackbarMessage by remember { mutableStateOf("") }
     var snackbarColor by remember { mutableStateOf(Color.Green) }
     val stepCounterViewModel: StepCounterViewModel = viewModel()
+    val userData by userSessionViewModel.userData.collectAsState()
+    val currentPrivacy = userData?.privacy ?: false
+    var pendingPrivacyValue by remember { mutableStateOf(currentPrivacy) }
 
 
     val pickImageLauncher = rememberLauncherForActivityResult(
@@ -116,10 +119,14 @@ fun ProfileScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-        ProfileOptionButton("Cambiar nombre y apellido") {}
-        ProfileOptionButton("Cambiar contraseña") {}
-        ProfileOptionButton("Cambiar correo") {}
-        ProfileOptionButton("Agregar un nuevo amigo") { navController.navigate("userFriendCode") }
+        ProfileOptionButton("Cambiar nombre y apellido") { navController.navigate("userFullName") }
+        //ProfileOptionButton("Cambiar contraseña") {}
+        //ProfileOptionButton("Cambiar correo") {}
+
+        if (!currentPrivacy) {
+            ProfileOptionButton("Agregar un nuevo amigo") { navController.navigate("userFriendCode") }
+        }
+
         ProfileOptionButton("Cerrar sesión", R.drawable.baseline_logout_24, Color.Red) {
             userSessionViewModel.signOut(stepCounterViewModel)
             navController.navigate("login") {
@@ -127,11 +134,6 @@ fun ProfileScreen(
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
-
-        // Estado local
-        val userData by userSessionViewModel.userData.collectAsState()
-        val currentPrivacy = userData?.privacy ?: false
-        var pendingPrivacyValue by remember { mutableStateOf(currentPrivacy) }
 
         Row(
             modifier = Modifier
@@ -164,14 +166,18 @@ fun ProfileScreen(
                             uid?.let {
                                 FirebaseUserManager.updatePrivacy(it, pendingPrivacyValue) { success ->
                                     if (success) {
-                                        userSessionViewModel.loadUserData()
-                                        snackbarMessage = "Privacidad actualizada"
-                                        snackbarColor = Color(0xFF4CAF50)
+                                        // Luego de actualizar la privacidad, actualiza también el estado de relaciones
+                                        FirebaseUserManager.updateFriendRelationStates(it, !pendingPrivacyValue) { relationSuccess ->
+                                            userSessionViewModel.loadUserData()
+                                            snackbarMessage = if (relationSuccess) "Privacidad y relaciones actualizadas" else "Privacidad actualizada, pero ocurrió un error en relaciones"
+                                            snackbarColor = if (relationSuccess) Color(0xFF4CAF50) else Color(0xFFFF9800)
+                                            snackbarVisible = true
+                                        }
                                     } else {
                                         snackbarMessage = "Error al actualizar privacidad"
                                         snackbarColor = Color(0xFFF44336)
+                                        snackbarVisible = true
                                     }
-                                    snackbarVisible = true
                                 }
                             }
                         }

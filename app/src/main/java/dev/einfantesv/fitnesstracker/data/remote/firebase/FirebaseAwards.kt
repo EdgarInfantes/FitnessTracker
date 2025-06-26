@@ -631,4 +631,58 @@ object FirebaseAwards {
             }
             .addOnFailureListener { onComplete(false) }
     }
+
+    fun makeAFriend(onComplete: (Boolean) -> Unit) {
+        val currentUser = auth.currentUser ?: return onComplete(false)
+        val userUid = currentUser.uid
+
+        // Paso 1: Verificar si ya tiene el logro
+        firestore.collection("Detail_user_award")
+            .whereEqualTo("user_uid", userUid)
+            .whereEqualTo("award_uid", "a8VeQ3i2UvIqNR87h7KH")
+            .get()
+            .addOnSuccessListener { existingDocs ->
+                if (!existingDocs.isEmpty) {
+                    return@addOnSuccessListener onComplete(true)
+                }
+
+                // Paso 2: Verificar si está en alguna relación de amistad (como uid_one o uid_second)
+                firestore.collection("Friend_relation")
+                    .whereEqualTo("uid_one", userUid)
+                    .get()
+                    .addOnSuccessListener { oneDocs ->
+                        if (!oneDocs.isEmpty) {
+                            // Desbloquear logro
+                            addFriendAward(userUid, onComplete)
+                        } else {
+                            // Buscar como uid_second
+                            firestore.collection("Friend_relation")
+                                .whereEqualTo("uid_second", userUid)
+                                .get()
+                                .addOnSuccessListener { secondDocs ->
+                                    if (!secondDocs.isEmpty) {
+                                        addFriendAward(userUid, onComplete)
+                                    } else {
+                                        onComplete(false)
+                                    }
+                                }
+                                .addOnFailureListener { onComplete(false) }
+                        }
+                    }
+                    .addOnFailureListener { onComplete(false) }
+            }
+            .addOnFailureListener { onComplete(false) }
+    }
+
+    private fun addFriendAward(userUid: String, onComplete: (Boolean) -> Unit) {
+        val data = mapOf(
+            "user_uid" to userUid,
+            "award_uid" to "a8VeQ3i2UvIqNR87h7KH"
+        )
+
+        firestore.collection("Detail_user_award")
+            .add(data)
+            .addOnSuccessListener { onComplete(true) }
+            .addOnFailureListener { onComplete(false) }
+    }
 }
