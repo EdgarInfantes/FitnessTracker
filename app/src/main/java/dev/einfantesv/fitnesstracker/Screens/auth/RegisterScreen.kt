@@ -51,7 +51,11 @@ fun RegisterScreen(navController: NavHostController) {
             onValueChange = { nombre = it },
             label = { Text("Nombre") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            keyboardOptions = KeyboardOptions.Default.copy(
+                capitalization = KeyboardCapitalization.Words,
+                keyboardType = KeyboardType.Text
+            )
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -61,7 +65,11 @@ fun RegisterScreen(navController: NavHostController) {
             onValueChange = { apellido = it },
             label = { Text("Apellido") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            keyboardOptions = KeyboardOptions.Default.copy(
+                capitalization = KeyboardCapitalization.Words,
+                keyboardType = KeyboardType.Text
+            )
         )
 
         Spacer(modifier = Modifier.height(16.dp))

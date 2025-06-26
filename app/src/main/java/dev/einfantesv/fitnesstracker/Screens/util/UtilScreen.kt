@@ -221,10 +221,10 @@ fun Headers(
                     modifier = Modifier.size(30.dp),
                 )
             }
-
+            //28
             Text(
                 text = label,
-                style = MaterialTheme.typography.titleLarge.copy(fontSize = 28.sp),
+                style = MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp),
                 fontWeight = FontWeight.Bold,
                 color = color
             )
@@ -240,7 +240,7 @@ fun Headers(
         ) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.titleLarge.copy(fontSize = 28.sp),
+                style = MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp),
                 fontWeight = FontWeight.Bold,
                 color = color
             )

@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -46,8 +45,8 @@ import androidx.navigation.NavHostController
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import android.R.attr.scaleX
 import androidx.compose.material.icons.filled.DirectionsWalk
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.core.graphics.toColorInt
 import com.github.mikephil.charting.charts.CombinedChart
@@ -82,9 +81,13 @@ fun DataUserScreen(navController: NavHostController,
     val labels = stepCounterViewModel.weeklyLabels.value
     val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     var meta by remember { mutableFloatStateOf(6000f) }
-    var stepsToday = stepCounterViewModel.stepCount
+    var stepsToday by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(selectedPeriod, uid) {
+        FirebaseGetDataManager.getTodaySteps(uid) { steps ->
+            stepsToday = steps
+        }
+
         FirebaseGetDataManager.getUserStepGoal(uid) { goal ->
             if (goal != null) {
                 val fetchedGoal = goal.toFloat()
@@ -170,7 +173,7 @@ fun HeaderDatos(pasos: Int) {
 
         //Texto Calorias
         Text(
-            text = "${pasos}",
+            text = "$pasos",
             style = MaterialTheme.typography.titleLarge.copy(fontSize = 100.sp),
             color = Color(0xFF7948DB),
         )
@@ -264,20 +267,12 @@ fun PeriodSelector(selected: String, onSelect: (String) -> Unit) {
 
 @Composable
 fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float) {
-    /**
-     * Gráfico combinado que muestra los pasos diarios/mensuales con una línea y una barra
-     * para el valor seleccionado. También muestra una línea de meta.
-     *
-     * @param steps lista de valores de pasos
-     * @param labels etiquetas para el eje X (fechas o meses)
-     * @param meta valor de meta diaria o mensual
-     */
-
-    var selectedIndex by remember { mutableStateOf(steps.lastIndex) }
+    var selectedIndex by remember { mutableIntStateOf(steps.lastIndex) }
     var showSnackbar by remember { mutableStateOf(false) }
     var snackbarMessage by remember { mutableStateOf("") }
     var snackbarColor by remember { mutableStateOf(Color.Green) }
 
+    val isMonthly = labels.any { it.length >= 3 && it[2] == '.' } || labels.any { it.length == 3 } // Detectar si es mensual por el formato de etiquetas
 
     AndroidView(
         factory = { context ->
@@ -299,6 +294,14 @@ fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float)
                     override fun onValueSelected(e: Entry?, h: Highlight?) {
                         e?.x?.toInt()?.let { index ->
                             selectedIndex = index
+                            if (selectedIndex in steps.indices && steps[selectedIndex] >= meta) {
+                                snackbarMessage = "Superaste la meta"
+                                snackbarColor = Color(0xFF4CAF50)
+                            } else {
+                                snackbarMessage = "No te rindas, puedes conseguirlo"
+                                snackbarColor = Color(0xFFF44336)
+                            }
+                            showSnackbar = true
                         }
                     }
 
@@ -307,18 +310,16 @@ fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float)
                     }
                 })
 
-
                 animateX(1000)
             }
         },
         update = { chart ->
-            // Preparar datos
-            val maxY = maxOf(steps.maxOrNull() ?: 0f, meta * 1.1f)
-            val minY = minOf(steps.minOrNull() ?: 0f, meta * 0.9f)
+            val rawMax = maxOf(steps.maxOrNull() ?: 0f, meta)
+            val increment = if (isMonthly) 300 else 10
+            val maxY = ((rawMax / increment).toInt() + 1) * increment.toFloat()
 
-            // Configurar eje Y
             chart.axisRight.apply {
-                axisMinimum = minY
+                axisMinimum = 0f
                 axisMaximum = maxY
                 labelCount = 5
                 textSize = 12f
@@ -334,20 +335,19 @@ fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float)
                 addLimitLine(limitLine)
             }
 
-            // Configurar eje X con etiquetas multilínea
             chart.xAxis.apply {
                 position = XAxis.XAxisPosition.BOTTOM
                 granularity = 1f
-                setDrawGridLines(false)
+                setDrawGridLines(true)
+                enableGridDashedLine(10f, 10f, 0f)
                 setDrawLabels(true)
                 textSize = 10f
                 labelCount = labels.size
-                labelRotationAngle = -90f
+                labelRotationAngle = 0f
                 setAvoidFirstLastClipping(true)
                 valueFormatter = IndexAxisValueFormatter(labels)
             }
 
-            // Línea de pasos
             val lineEntries = steps.mapIndexed { index, value ->
                 Entry(index.toFloat(), value)
             }
@@ -356,10 +356,6 @@ fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float)
                 mode = LineDataSet.Mode.CUBIC_BEZIER
                 color = "#7948DB".toColorInt()
                 setCircleColor("#7948DB".toColorInt())
-
-                color = android.graphics.Color.parseColor("#7948DB")
-                setCircleColor(android.graphics.Color.parseColor("#7948DB"))
-
                 setDrawCircles(true)
                 circleRadius = 5f
                 lineWidth = 2f
@@ -368,7 +364,6 @@ fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float)
                 axisDependency = YAxis.AxisDependency.RIGHT
             }
 
-            // Barra resaltada
             val highlightEntry = BarEntry(selectedIndex.toFloat(), steps[selectedIndex])
             val barDataSet = BarDataSet(listOf(highlightEntry), "Resaltado").apply {
                 setDrawValues(false)
@@ -382,16 +377,6 @@ fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float)
                 setData(BarData(barDataSet))
             }
 
-            if (selectedIndex in steps.indices && steps[selectedIndex] >= meta) {
-                snackbarMessage = "Superaste la meta"
-                snackbarColor = Color(0xFF4CAF50)
-            }else{
-                snackbarMessage = "No te rindas, puedes conseguirlo"
-                snackbarColor = Color(0xFFF44336)
-
-            }
-            showSnackbar = true
-
             chart.data = combinedData
             chart.notifyDataSetChanged()
             chart.invalidate()
@@ -400,6 +385,7 @@ fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float)
             .fillMaxWidth()
             .height(350.dp)
     )
+
     AnimatedSnackbar(
         visible = showSnackbar,
         message = snackbarMessage,
@@ -413,7 +399,6 @@ fun CombinedProgressChart(steps: List<Float>, labels: List<String>, meta: Float)
         }
     }
 }
-
 
 @Composable
 fun MuestraResumen(total: Int, promedio: Int, unidad: String = "Kcal") {

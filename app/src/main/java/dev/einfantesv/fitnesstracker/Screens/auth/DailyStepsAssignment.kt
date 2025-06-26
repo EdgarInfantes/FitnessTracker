@@ -31,7 +31,7 @@ fun DailyStepsAssignment(
     nombre: String,
     apellido: String,
     email: String,
-    password: String
+    password: String? = null
 ) {
     val context = LocalContext.current
     val options = listOf(
@@ -185,11 +185,11 @@ fun DailyStepsAssignment(
 
                 CoroutineScope(Dispatchers.Main).launch {
                     val result = FirebaseAuthManager.registerUser(
-                        nombre.trim(),
-                        apellido.trim(),
-                        email.trim(),
-                        password,
-                        dailyGoal
+                        firstname = nombre.trim(),
+                        lastname = apellido.trim(),
+                        email = email.trim(),
+                        password = password ?: "", // usa "" si viene null
+                        dailyGoal = dailyGoal
                     )
 
                     if (result.isSuccess) {

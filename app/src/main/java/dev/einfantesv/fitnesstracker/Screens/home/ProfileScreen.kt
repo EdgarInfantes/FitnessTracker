@@ -28,30 +28,17 @@ import dev.einfantesv.fitnesstracker.Screens.util.asyncImgPerfil
 import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.draw.clip
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import dev.einfantesv.fitnesstracker.Screens.util.ActionButton
 import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseAuthManager.uploadProfileImage
 import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseGetDataManager
 import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseUserManager
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.einfantesv.fitnesstracker.Screens.util.AnimatedSnackbar
 import dev.einfantesv.fitnesstracker.StepCounterViewModel
@@ -67,7 +54,7 @@ fun ProfileScreen(
     var showImageOptions by remember { mutableStateOf(false) }
     var showFullScreen by remember { mutableStateOf(false) }
     var profileImageUri by remember { mutableStateOf<Uri?>(null) }
-    var isPrivate by remember { mutableStateOf(false) }
+    var showPrivacyDialog by remember { mutableStateOf(false) }
     val profileImageUrl by userSessionViewModel.profileImageUrl.collectAsState()
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var selectedAvatarUrl by remember { mutableStateOf<String?>(null) }
@@ -78,6 +65,9 @@ fun ProfileScreen(
     var snackbarMessage by remember { mutableStateOf("") }
     var snackbarColor by remember { mutableStateOf(Color.Green) }
     val stepCounterViewModel: StepCounterViewModel = viewModel()
+    val userData by userSessionViewModel.userData.collectAsState()
+    val currentPrivacy = userData?.privacy ?: false
+    var pendingPrivacyValue by remember { mutableStateOf(currentPrivacy) }
 
 
     val pickImageLauncher = rememberLauncherForActivityResult(
@@ -129,9 +119,14 @@ fun ProfileScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-        ProfileOptionButton("Cambiar nombre y apellido") {}
-        ProfileOptionButton("Cambiar contraseña") {}
-        ProfileOptionButton("Cambiar correo") {}
+        ProfileOptionButton("Cambiar nombre y apellido") { navController.navigate("userFullName") }
+        //ProfileOptionButton("Cambiar contraseña") {}
+        //ProfileOptionButton("Cambiar correo") {}
+
+        if (!currentPrivacy) {
+            ProfileOptionButton("Agregar un nuevo amigo") { navController.navigate("userFriendCode") }
+        }
+
         ProfileOptionButton("Cerrar sesión", R.drawable.baseline_logout_24, Color.Red) {
             userSessionViewModel.signOut(stepCounterViewModel)
             navController.navigate("login") {
@@ -148,7 +143,54 @@ fun ProfileScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("Cuenta Privada", style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp))
-            Switch(checked = isPrivate, onCheckedChange = { isPrivate = it })
+
+            Switch(
+                checked = currentPrivacy,
+                onCheckedChange = { newValue ->
+                    pendingPrivacyValue = newValue
+                    showPrivacyDialog = true
+                }
+            )
+        }
+
+// Diálogo de confirmación para cambio de privacidad
+        if (showPrivacyDialog) {
+            AlertDialog(
+                onDismissRequest = { showPrivacyDialog = false },
+                title = { Text("Confirmar cambio de privacidad") },
+                text = { Text("¿Estás seguro de modificar la privacidad de tu cuenta?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showPrivacyDialog = false
+                            uid?.let {
+                                FirebaseUserManager.updatePrivacy(it, pendingPrivacyValue) { success ->
+                                    if (success) {
+                                        // Luego de actualizar la privacidad, actualiza también el estado de relaciones
+                                        FirebaseUserManager.updateFriendRelationStates(it, !pendingPrivacyValue) { relationSuccess ->
+                                            userSessionViewModel.loadUserData()
+                                            snackbarMessage = if (relationSuccess) "Privacidad y relaciones actualizadas" else "Privacidad actualizada, pero ocurrió un error en relaciones"
+                                            snackbarColor = if (relationSuccess) Color(0xFF4CAF50) else Color(0xFFFF9800)
+                                            snackbarVisible = true
+                                        }
+                                    } else {
+                                        snackbarMessage = "Error al actualizar privacidad"
+                                        snackbarColor = Color(0xFFF44336)
+                                        snackbarVisible = true
+                                    }
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Sí")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showPrivacyDialog = false }) {
+                        Text("No")
+                    }
+                }
+            )
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -391,6 +433,3 @@ fun AvatarPicker(
         }
     }
 }
-
-
-

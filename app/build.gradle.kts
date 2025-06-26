@@ -72,4 +72,5 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx") //Fire
     implementation("com.google.firebase:firebase-storage") //Sotrage
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0") //Sync color system bar
+    implementation("com.google.android.gms:play-services-auth:20.7.0") //Authentication with Google
 }
