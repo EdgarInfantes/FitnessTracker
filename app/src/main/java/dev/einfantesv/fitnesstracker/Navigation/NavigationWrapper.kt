@@ -14,6 +14,7 @@ import dev.einfantesv.fitnesstracker.Screens.auth.resetPass.VerificationScreen
 import dev.einfantesv.fitnesstracker.StepCounterViewModel
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
 import dev.einfantesv.fitnesstracker.Screens.auth.RegisterScreen
+import dev.einfantesv.fitnesstracker.Screens.hidden.UserFriendCodeScreen
 
 @Composable
 fun NavigationWrapper(
@@ -77,6 +78,9 @@ fun NavigationWrapper(
                 email = email,
                 password = "" // ya no se necesita
             )
+        }
+        composable("userFriendCode") {
+            UserFriendCodeScreen(navController)
         }
     }
 }
