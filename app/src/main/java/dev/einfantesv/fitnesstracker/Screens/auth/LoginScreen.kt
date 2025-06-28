@@ -117,19 +117,19 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
             )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "¿Olvidaste tu contraseña?",
-            modifier = Modifier
-                .align(Alignment.End)
-                .clickable {
-                    navController.navigate("forgotPassword")
-                },
-            color = Color(0xFF7948DB),
-            fontSize = 17.sp,
-            fontWeight = FontWeight.Bold
-        )
+//        Spacer(modifier = Modifier.height(8.dp))
+//
+//        Text(
+//            text = "¿Olvidaste tu contraseña?",
+//            modifier = Modifier
+//                .align(Alignment.End)
+//                .clickable {
+//                    navController.navigate("forgotPassword")
+//                },
+//            color = Color(0xFF7948DB),
+//            fontSize = 17.sp,
+//            fontWeight = FontWeight.Bold
+//        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
