@@ -45,6 +45,7 @@ import dev.einfantesv.fitnesstracker.UserModel
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
 import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseGetDataManager
 import kotlinx.coroutines.delay
+import dev.einfantesv.fitnesstracker.data.remote.firebase.FirebaseAwards
 
 @Composable
 fun HomeScreen(
@@ -73,6 +74,66 @@ fun HomeScreen(
         uid.let {
             stepCounterViewModel.onUserLogin(it)
         }
+
+        FirebaseAwards.oneThousandStepsOneDay { unlocked ->
+            if (unlocked) {
+                println("Logro de 1000 pasos desbloqueado")
+            }
+        }
+
+        FirebaseAwards.surpassMensualGoal { unlocked ->
+            if (unlocked) {
+                println("Meta mensual desbloqueada")
+            }
+        }
+
+        FirebaseAwards.surpassDailyGoal { unlocked ->
+            if (unlocked) {
+                println("Meta diaria desbloqueada")
+            }
+        }
+
+        FirebaseAwards.oneHundredMillionSteps { unlocked ->
+            if (unlocked) {
+                println("Logro de 100 millones de pasos desbloqueado")
+            }
+        }
+
+        FirebaseAwards.fiveHundredStepsOneDay { unlocked ->
+            if (unlocked) {
+                println("Logro de 500 pasos desbloqueado")
+            }
+        }
+
+        FirebaseAwards.tenThousandStepsOneWeek { unlocked ->
+            if (unlocked) {
+                println("Logro de 10000 pasos desbloqueado")
+            }
+        }
+
+        FirebaseAwards.oneHundredStepsOneDay { unlocked ->
+            if (unlocked) {
+                println("Logro de 100 pasos desbloqueado")
+            }
+        }
+
+        FirebaseAwards.oneMillionStepsInAMonth { unlocked ->
+            if (unlocked) {
+                println("Logro de 1 millón de pasos desbloqueado")
+            }
+        }
+
+        FirebaseAwards.dailyGoalFiveDaysInARow { unlocked ->
+            if (unlocked) {
+                println("Logro de meta diaría 5 días seguidos desbloqueado")
+            }
+        }
+
+        FirebaseAwards.makeAFriend { unlocked ->
+            if (unlocked) {
+                println("Logro de hacer un amigo desbloqueado")
+            }
+        }
     }
 
     val requestPermission = rememberRequestActivityRecognitionPermission { granted ->
@@ -80,7 +141,12 @@ fun HomeScreen(
         if (granted) stepCounterViewModel.startListening() else stepCounterViewModel.stopListening()
     }
 
-    LaunchedEffect(Unit) { requestPermission() }
+    LaunchedEffect(Unit) {
+        if (userSessionViewModel.userData.value == null) {
+            userSessionViewModel.loadUserData()
+        }
+        requestPermission()
+    }
 
     LaunchedEffect(hasPermission) {
         if (hasPermission) {
@@ -145,64 +211,93 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(50.dp))
         
-        RankingAndAwardsSection()
+        RankingAndAwardsSection(uid)
 
     }
 }
 
 @Composable
-fun RankingAndAwardsSection() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        // Columna del Ranking
-        Column(
-            modifier = Modifier
-                .weight(0.6f)
-                .padding(end = 8.dp)
-        ) {
-            rankingToday()
-        }
+fun RankingAndAwardsSection(uid: String, rankingViewModel: RankingViewModel = viewModel()) {
+    var user by remember { mutableStateOf<UserModel?>(null) }
 
-        // Columna de Awards
-        Column(
-            modifier = Modifier
-                .weight(0.4f)
-                .padding(start = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            awards("id")
+    LaunchedEffect(uid) {
+        FirebaseGetDataManager.getUserByUid(uid) {
+            user = it
+            if (it?.privacy == false) {
+                rankingViewModel.loadFriendRanking()
+            }
+        }
+    }
+
+    user?.let {
+        if (!it.privacy) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                // Columna del Ranking
+                Column(
+                    modifier = Modifier
+                        .weight(0.6f)
+                        .padding(end = 8.dp)
+                ) {
+                    rankingToday(rankingViewModel)
+                }
+
+                // Columna de Awards
+                Column(
+                    modifier = Modifier
+                        .weight(0.4f)
+                        .padding(start = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    awards(uid)
+                }
+            }
+        } else {
+            // Solo mostrar awards si la cuenta es privada
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                awards(uid)
+            }
         }
     }
 }
 
-
 @Composable
-fun rankingToday(
-    rankingViewModel: RankingViewModel = viewModel()
-) {
+fun rankingToday(rankingViewModel: RankingViewModel = viewModel()) {
     val topUids by rankingViewModel.ranking.collectAsState()
 
     Column {
         Headers(label = "Ranking del día", color = Color(0xFF7948DB))
 
-        topUids.take(3).forEachIndexed { index, uid ->
-            RankingUserCard(uid = uid, index = index)
-            Spacer(modifier = Modifier.height(8.dp))
+        Column {
+            topUids.take(3).forEachIndexed { index, uid ->
+                RankingUserCard(uid = uid, index = index)
+                Spacer(modifier = Modifier.height(6.dp))
+            }
         }
     }
 }
 
-
 @Composable
 fun RankingUserCard(uid: String, index: Int) {
     var user by remember { mutableStateOf<UserModel?>(null) }
+    var stepsToday by remember { mutableIntStateOf(0) }
 
+    // Cargar datos del usuario
     LaunchedEffect(uid) {
         FirebaseGetDataManager.getUserByUid(uid) { fetchedUser ->
             user = fetchedUser
+        }
+
+        FirebaseGetDataManager.getTodaySteps(uid) { steps ->
+            stepsToday = steps
         }
     }
 
@@ -214,89 +309,118 @@ fun RankingUserCard(uid: String, index: Int) {
             else -> null
         }
 
+        val firstNameOnly = it.firstname.split(" ").firstOrNull() ?: ""
+        val lastInitial = it.lastname.split(" ").firstOrNull()?.firstOrNull()?.toString()?.uppercase() ?: ""
+
         RankingItem(
-            name = "${it.firstname} ${it.lastname}",
+            name = "$firstNameOnly $lastInitial.",
             imageUrl = it.profileImageUrl,
-            placeIcon = placeIcon
+            placeIcon = placeIcon,
+            stepsToday = stepsToday
         )
     }
 }
 
 @Composable
-fun RankingItem(name: String, imageUrl: String?, placeIcon: Int?) {
-        val backgroundColor = Color(0xFFD1B4F8)
-        val textColor = Color(0xFF5C2D91)
+fun RankingItem(name: String, imageUrl: String?, placeIcon: Int?, stepsToday: Int) {
+    val backgroundColor = Color(0xFFF3EFFF)
+    val textColor = Color(0xFF5C2D91)
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(backgroundColor, shape = RoundedCornerShape(40.dp))
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-        ) {
-            if (!imageUrl.isNullOrBlank()) {
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = "$name profile picture",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color.Gray)
-                )
-            }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(68.dp)
+            .background(backgroundColor, shape = RoundedCornerShape(40.dp))
+            .padding(horizontal = 8.dp, vertical = 6.dp)
+    ) {
+        asyncImgPerfil(
+            profileImageUrl = imageUrl,
+            profileImageUri = null,
+            selectedAvatarUrl = null,
+            size = 38
+        )
 
-            Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(10.dp))
 
-            Text(
-                text = name,
-                color = textColor,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                modifier = Modifier.weight(1f)
+        Text(
+            text = "$name ($stepsToday)",
+            color = textColor,
+            fontWeight = FontWeight.Bold,
+            fontSize = 13.sp,
+            modifier = Modifier.weight(1.5f)
+        )
+
+        Spacer(modifier = Modifier.width(2.dp)) // Espacio reducido
+
+        placeIcon?.let {
+            Image(
+                painter = painterResource(id = it),
+                contentDescription = "Ranking position icon",
+                modifier = Modifier
+                    .size(40.dp) // Aumentado el tamaño
+                    .weight(0.6f),
+                alignment = Alignment.CenterEnd
             )
-
-            placeIcon?.let {
-                Image(
-                    painter = painterResource(id = it),
-                    contentDescription = "Ranking position icon",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
         }
+    }
 }
 
 @Composable
-fun awards(uid: String){
-    Headers(label = "Premios", color = Color(0xFF7948DB))
+fun awards(uid: String) {
+    var userAwards by remember { mutableStateOf<List<FirebaseAwards.Award>>(emptyList()) }
 
-    Spacer(modifier = Modifier.height(8.dp))
-
-    // Seccion de premios
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-
+    LaunchedEffect(uid) {
+        FirebaseAwards.getUnlockedAwardsForUser(uid) { awards ->
+            userAwards = awards.take(4) // solo mostrar máximo 4
+        }
     }
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Headers(label = "Premios", color = Color(0xFF7948DB))
+    Spacer(modifier = Modifier.height(8.dp))
 
-    // Botón de inventario
-    Text(
-        text = "-> Go and check your inventory",
-        color = Color.Red,
-        fontSize = 14.sp,
-        modifier = Modifier
-            .padding(8.dp)
-            .background(Color.White, shape = RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        fontWeight = FontWeight.Medium
-    )
+    val columns = 2
+    val imageSize = 70.dp
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        for (row in userAwards.chunked(columns)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp)
+            ) {
+                row.forEach { award ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            model = award.url,
+                            contentDescription = "Premio desbloqueado",
+                            modifier = Modifier
+                                .size(imageSize)
+                                .clip(RoundedCornerShape(12.dp))
+                        )
+                    }
+                }
+
+                // Rellenar columnas vacías para mantener la uniformidad
+                repeat(columns - row.size) {
+                    Spacer(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(1f)
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable

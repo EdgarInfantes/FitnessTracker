@@ -1,5 +1,10 @@
 package dev.einfantesv.fitnesstracker.Screens.auth
 
+import android.app.Activity
+import android.widget.Toast
+import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -43,7 +48,6 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
     var emailError by remember { mutableStateOf(false) }
     var passwordError by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
-    val context = LocalContext.current
     var snackbarVisible by remember { mutableStateOf(false) }
     var snackbarMessage by remember { mutableStateOf("") }
     var snackbarColor by remember { mutableStateOf(Color.Green) }
@@ -113,19 +117,19 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
             )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "¿Olvidaste tu contraseña?",
-            modifier = Modifier
-                .align(Alignment.End)
-                .clickable {
-                    navController.navigate("forgotPassword")
-                },
-            color = Color(0xFF7948DB),
-            fontSize = 17.sp,
-            fontWeight = FontWeight.Bold
-        )
+//        Spacer(modifier = Modifier.height(8.dp))
+//
+//        Text(
+//            text = "¿Olvidaste tu contraseña?",
+//            modifier = Modifier
+//                .align(Alignment.End)
+//                .clickable {
+//                    navController.navigate("forgotPassword")
+//                },
+//            color = Color(0xFF7948DB),
+//            fontSize = 17.sp,
+//            fontWeight = FontWeight.Bold
+//        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -180,6 +184,31 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
 
         Spacer(modifier = Modifier.height(45.dp))
 
+        val context = LocalContext.current
+        val activity = LocalActivity.current!!
+
+        val googleSignInLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                GoogleAuthManager.handleSignInResult(
+                    data = result.data,
+                    onRegisteredUser = {
+                        navController.navigate("home") {
+                            popUpTo("login") { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    onNewUser = { nombre, apellido, correo ->
+                        navController.navigate("dailyStepsGoogle/${nombre}/${apellido}/${correo}")
+                    },
+                    onFailure = { error ->
+                        Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                    }
+                )
+            }
+        }
+
         Row(
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth(),
@@ -187,7 +216,8 @@ fun LoginScreen(navController: NavHostController, userSessionViewModel: UserSess
         ) {
             Button(
                 onClick = {
-                    // Acción inicio con Google
+                    val intent = GoogleAuthManager.getSignInIntent(activity)
+                    googleSignInLauncher.launch(intent)
                 },
                 modifier = Modifier
                     .fillMaxWidth()

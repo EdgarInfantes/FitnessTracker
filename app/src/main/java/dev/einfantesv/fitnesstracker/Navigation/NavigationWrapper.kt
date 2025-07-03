@@ -14,6 +14,8 @@ import dev.einfantesv.fitnesstracker.Screens.auth.resetPass.VerificationScreen
 import dev.einfantesv.fitnesstracker.StepCounterViewModel
 import dev.einfantesv.fitnesstracker.UserSessionViewModel
 import dev.einfantesv.fitnesstracker.Screens.auth.RegisterScreen
+import dev.einfantesv.fitnesstracker.Screens.hidden.UserFriendCodeScreen
+import dev.einfantesv.fitnesstracker.Screens.hidden.UserFullNameScreen
 
 @Composable
 fun NavigationWrapper(
@@ -65,5 +67,25 @@ fun NavigationWrapper(
                 password = password
             )
         }
+        composable("dailyStepsGoogle/{nombre}/{apellido}/{email}") { backStackEntry ->
+            val nombre = backStackEntry.arguments?.getString("nombre") ?: ""
+            val apellido = backStackEntry.arguments?.getString("apellido") ?: ""
+            val email = backStackEntry.arguments?.getString("email") ?: ""
+
+            DailyStepsAssignment(
+                navController = navController,
+                nombre = nombre,
+                apellido = apellido,
+                email = email,
+                password = "" // ya no se necesita
+            )
+        }
+        composable("userFriendCode") {
+            UserFriendCodeScreen(navController)
+        }
+        composable("userFullName") {
+            UserFullNameScreen(navController, userSessionViewModel)
+        }
+
     }
 }
